@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Benchmark</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #f0f0f0;
+				margin: 0px;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+
+		<script src="../build/three.min.js"></script>
+		//<script src="js/libs/stats.js-r9/src/Stats.js"></script>
+		
+		<!-- <script src="js/libs/stats-new.min.js"></script>			//custom
+		//<script src="js/libs/stats.min - Copy.js"></script>		//original -->
+
+		<script>
+
+		var numObjects = 600;
+		var removeNum = numObjects;		//position of the object array to remove object
+		
+		var container, stats;
+		var camera, scene, renderer;
+		var geometry, material, material2;
+		//var geometries = new THREE.CubeGeometry(10);
+		var meshes = new Array(numObjects);// = new THREE.Mesh(10);
+		var colors = new Array(numObjects);
+		var addObj = 0;
+		var waitFrames = 0;
+		
+		init();
+		animate();
+
+		function init() {
+
+			container = document.createElement( 'div' );
+			document.body.appendChild( container );
+		
+			camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.z = 2000;
+
+			scene = new THREE.Scene();
+
+			//assign random colors
+			for(var i = 0; i < numObjects; i++)
+			{
+				//										This number represents: 0xffffff
+				colors[i] = '#'+Math.floor(Math.random()*16777215).toString(16);
+			}
+			var color1 = '#'+Math.floor(Math.random()*16777215).toString(16);
+			var color2 = '#'+Math.floor(Math.random()*16777215).toString(16);
+			var color3 = '#'+Math.floor(Math.random()*16777215).toString(16);
+			var color4 = '#'+Math.floor(Math.random()*16777215).toString(16);
+
+			//use random colors on new materials
+			material1 = new THREE.MeshBasicMaterial( { color: color1, wireframe: true } );
+			material2 = new THREE.MeshBasicMaterial( { color: color2, wireframe: true } );
+			material3 = new THREE.MeshBasicMaterial( { color: color3, wireframe: true } );
+			material4 = new THREE.MeshBasicMaterial( { color: color4, wireframe: true } );
+			for(var i = 0; i < numObjects; i++)
+			{
+				//material1 = new THREE.MeshBasicMaterial( { color: color[i], wireframe: true } );
+			}
+			
+			
+			geometry = new THREE.CubeGeometry( 200, 200, 200 );
+			geometry2 = new THREE.CubeGeometry( 200, 400, 200 );
+			// geometries[0] = new THREE.CubeGeometry( 200, 200, 200 );
+			// geometries[1] = new THREE.CubeGeometry( 200, 300, 200 );
+			
+
+			for(var i = 0; i < meshes.length; i++)
+			{
+			
+				var compute = (Math.floor(Math.random()*4));
+				console.log("check compute: \n", compute);
+				
+				if( compute == 1)
+					meshes[i] = new THREE.Mesh( geometry, material1 );
+				else if(compute == 2)
+					meshes[i] = new THREE.Mesh( geometry, material2 );
+				else if(compute == 3)
+					meshes[i] = new THREE.Mesh( geometry, material3 );
+				else
+					meshes[i] = new THREE.Mesh( geometry, material4 );
+				
+				meshes[i].rotation.x += Math.floor(Math.random()*2)
+				meshes[i].position.x += Math.floor(Math.random()*1100);
+				meshes[i].position.x *= (Math.floor(Math.random()*3)-1);
+				
+				meshes[i].rotation.y += Math.floor(Math.random()*2)
+				meshes[i].position.y += Math.floor(Math.random()*1100);
+				meshes[i].position.y *= (Math.floor(Math.random()*3)-1);
+				
+				meshes[i].rotation.z += Math.floor(Math.random()*2)
+				meshes[i].position.z += Math.floor(Math.random()*1100);
+				meshes[i].position.z *= (Math.floor(Math.random()*3)-1);
+				
+				scene.add( meshes[i] );
+			}
+			
+			renderer = new THREE.CanvasRenderer();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+			document.body.appendChild( renderer.domElement );
+			
+			//add stats
+			stats = new Stats();
+			
+			stats.getDomElement().style.position = 'absolute';
+			stats.getDomElement().style.left = '0px';
+			stats.getDomElement().style.top = '0px';
+			document.body.appendChild( stats.getDomElement() );
+
+			//stats.domElement.style.position = 'absolute';
+			//stats.domElement.style.top = '0px';
+			
+			//container.appendChild( stats.domElement );
+
+		}
+
+		function animate() {
+
+			// note: three.js includes requestAnimationFrame shim
+			requestAnimationFrame( animate );
+			
+			//fps meter update
+			stats.update();
+			//console.log(stats.getFps());
+			
+			//console.log("waitFrames: ", waitFrames);
+			if( waitFrames == 0 ) 
+			{
+				if( stats.getFps() < 40 )
+				{
+					addObj = -1;
+					waitFrames = 1;
+					//console.log(" addObj = -1; ");
+				}
+				else if( stats.getFps() > 50 )
+				{
+					addObj = 1;
+					waitFrames = 1;
+					//console.log(" addObj = 1; ");
+				}
+				else
+				{
+					addObj = 0;
+				}
+				//console.log(stats.show());
+				//console.log();
+				
+				//stats.show();
+				//console.log();
+
+				console.log("removeNum: ", removeNum);
+
+				if(addObj == -1)		//remove objects
+				{
+					scene.remove( meshes[removeNum--] );
+				}
+				else if(addObj == 1)	//add objects
+				{
+					scene.add( meshes[removeNum++] );
+				}
+			}
+			else
+			{
+				waitFrames--;
+			}
+			
+			//rotate all the boxes
+			for(var i = 0; i < meshes.length; i++)
+			 {
+				meshes[i].rotation.x += 0.01;
+				meshes[i].rotation.y += 0.03;
+			 }
+			 
+			renderer.render( scene, camera );
+		}
+
+		</script>
+
+	</body>
+</html>
