@@ -25,7 +25,6 @@
 		<script src="../js/Detector.js"></script>
 		<script src="../js/libs/stats.js-r9/src/Stats.js"></script>
 		<script src="../../test/benchmark/benchmark-1.0.0.js"></script>
-		<script src="THREEx.FullScreen.js"></script>
 		
 		<!-- <script src="js/libs/stats-new.min.js"></script>			//custom
 		//<script src="js/libs/stats.min - Copy.js"></script>		//original -->
@@ -43,14 +42,15 @@
 		
 		var removeNum = startVal;				//mesh array position, for removing objects
 		var container, stats;
-		var camera, scene, renderer;
+		var camera, renderer;
+		var scene = new THREE.Scene();
 		var geometry, material, material2;
 		//var geometries = new THREE.CubeGeometry(10);
 		var meshes = new Array(numObjects);
 		var colors = new Array(numObjects);
 		var addFlag = 0;						// -1 = remove, 1 = add, 0 = nothing
-		var waitFrames = 0;						// wait time between adding/removing objects
-		var waitTime = 10;						// amount of frames to wait
+		var waitFrames = 60;						// wait time between adding/removing objects
+		var waitTime = 0;						// amount of frames to wait
 		
 		var windowHalfX = window.innerWidth / 2;
 		var windowHalfY = window.innerHeight / 2;
@@ -63,38 +63,83 @@
 
 		var runs = 0;
 		
-		var suite = new Benchmark.Suite;
+		var timebefore = 0;
+		var timeafter = 0;
+		
+		function runBenchmark () 
+		{
+			var suite = new Benchmark.Suite;
 			
 			// add tests
 			suite.add('fillrate', function() {
 			  //mydiv.insertAdjacentHTML('beforeend', '<span></span>');
 			  //render();
 			  //console.log("inside the fill rate test");
-			  //console.log("running");
+			  //console.log("fillrate-benchmark");
 			  //init();
 			  //number++;
-			  //runs = runs + 1;
+			  runs = runs + 1;
+			  //console.log("run #: ", runs);
 			  //init();
 			  //animate();
 			  
 			  //var TargetFPS = document.getElementById('STATUS_ID');
 			//TargetFPS.innerHTML = "Target FPS: " +runs;
+			  
+			  //requestAnimationFrame( animate );
+			
+			//fps meter update
+			//stats.update();
+			
+			//rotate camera position
+			//var timer = Date.now() * 0.0002;
+			//camera.position.x = Math.cos( timer ) * 2000;
+			//camera.position.z = Math.sin( timer ) * 2000;
+			//camera.lookAt( scene.position );
 			 
-			requestAnimationFrame( animate );
-			renderer.render( scene, camera );
+			//renderer.render( scene, camera );
+			  
+			})
+			
+			suite.add('test2', function() {
+			  //mydiv.insertAdjacentHTML('beforeend', '<span></span>');
+			  //render();
+			  //console.log("inside the fill rate test");
+			  console.log("test2-benchmark");
+			  //init();
+			  //number++;
+			  runs = runs + 1;
+			  //init();
+			  //animate();
+			  
+			  //var TargetFPS = document.getElementById('STATUS_ID');
+			//TargetFPS.innerHTML = "Target FPS: " +runs;
+			  
+			  //requestAnimationFrame( animate );
+			
+			//fps meter update
+			//stats.update();
+			
+			//rotate camera position
+			//var timer = Date.now() * 0.0002;
+			//camera.position.x = Math.cos( timer ) * 2000;
+			//camera.position.z = Math.sin( timer ) * 2000;
+			//camera.lookAt( scene.position );
+			 
+			//renderer.render( scene, camera );
 			  
 			})
 			 
 			// Additional options for the test
 			
 			 .on('setup', function() {
-				//console.log("setup");
+				console.log("setup");
 				//var mydiv = document.getElementById('mydiv');
 				//time = performance.now();
 				//runs = runs + 1;
 			  })
 			  .on('teardown', function() {
-				//console.log("teardown");
+				console.log("teardown");
 				//mydiv.innerHTML = '';
 				//endtime = performance.now();
 				//console.log("difference: ", endtime - time);
@@ -125,15 +170,22 @@
 		
 		//suite.run();
 		
+		}
+	
+		
 		//Check that browser supports WebGL, else exit nicely
-		if (Detector.webgl) {
-			init();
-			//animate();
-			suite.run();
-		} else {	
-			var warning = Detector.getWebGLErrorMessage();
-			document.getElementById('container').appendChild(warning);
-		}   
+		 if (Detector.webgl) {
+			 init();
+			 console.log("begin animate");
+			 animate();
+			 //requestAnimationFrame( animate );
+			 
+			//renderer.render( scene, camera );
+			//runBenchmark();
+		 } else {	
+			 var warning = Detector.getWebGLErrorMessage();
+			 document.getElementById('container').appendChild(warning);
+		 }   
 
 		function init() 
 		{
@@ -148,8 +200,65 @@
 			camera.position.z = 1000;
 			camera.position.set( 2500, 2500, 500 );
 
-			scene = new THREE.Scene();
+			//make square used to be here
+			makeSquare();
+
+			//renderer = new THREE.CanvasRenderer();
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.sortObjects = false;
+			renderer.sortElements = false;
+			container.appendChild( renderer.domElement );
 			
+			//add stats
+			stats = new Stats();
+			
+			//older way to add statistics object
+			stats.getDomElement().style.position = 'absolute';
+			stats.getDomElement().style.left = '0px';
+			stats.getDomElement().style.top = '0px';
+			document.body.appendChild( stats.getDomElement() );
+
+			// new way to do add statistics object
+			//stats.domElement.style.position = 'absolute';
+			//stats.domElement.style.top = '0px';
+			//container.appendChild( stats.domElement );
+			
+			// document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+			// document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+			// document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+
+			// //
+
+			// window.addEventListener( 'resize', onWindowResize, false );
+		}
+
+		function addShape( shape, color, x, y, z, rx, ry, rz, s ) 
+		{
+
+			// flat shape
+			var geometry = new THREE.ShapeGeometry( shape );
+			var material = new THREE.MeshBasicMaterial( { color: color, overdraw: true } );
+
+			var mesh = new THREE.Mesh( geometry, material );
+			mesh.position.set( x, y, z );
+			mesh.rotation.set( rx, ry, rz );
+			mesh.scale.set( s, s, s );
+			scene.add( mesh );
+
+			// line
+			var geometry = shape.createPointsGeometry();
+			var material = new THREE.LineBasicMaterial( { linewidth: 10, color: 0x333333, transparent: true } );
+
+			var line = new THREE.Line( geometry, material );
+			line.position.set( x, y, z );
+			line.rotation.set( rx, ry, rz );
+			line.scale.set( s, s, s );
+			scene.add( line );
+		}
+		
+		function makeSquare() 
+		{
 			// Square
 			var sqLength = 80;
 			var x = 5000; //window.innerWidth;
@@ -167,76 +276,7 @@
 			
 			//scene.add(squareShape);
 			addShape( squareShape, 0x0055ff, 150, 100, 0, 0, 0, 0, 1 );
-
-			renderer = new THREE.CanvasRenderer();
-			renderer.setSize( window.innerWidth, window.innerHeight );
-			renderer.sortObjects = false;
-			renderer.sortElements = false;
-			container.appendChild( renderer.domElement );
-			
-			//add stats
-			stats = new Stats();
-			
-			//older way to add statistics object
-			stats.getDomElement().style.position = 'absolute';
-			stats.getDomElement().style.left = '0px';
-			stats.getDomElement().style.top = '0px';
-			document.body.appendChild( stats.getDomElement() );
-
-			console.log( THREEx.FullScreen.available() );
-			console.log( THREEx.FullScreen.activated() );
-			
-			//document.body.requestFullscreen();
-			
-			if( THREEx.FullScreen.activated() ){
-			  THREEx.FullScreen.cancel();
-			}else{
-			  THREEx.FullScreen.request();
-			}
-			
-			container.webkitRequestFullScreen();
-			
-			console.log( THREEx.FullScreen.activated() );
-			
-			// new way to do add statistics object
-			//stats.domElement.style.position = 'absolute';
-			//stats.domElement.style.top = '0px';
-			//container.appendChild( stats.domElement );
-			
-			// document.addEventListener( 'mousedown', onDocumentMouseDown, false );
-			// document.addEventListener( 'touchstart', onDocumentTouchStart, false );
-			// document.addEventListener( 'touchmove', onDocumentTouchMove, false );
-
-			// //
-
-			// window.addEventListener( 'resize', onWindowResize, false );
 		}
-
-		function addShape( shape, color, x, y, z, rx, ry, rz, s ) {
-
-					// flat shape
-
-					var geometry = new THREE.ShapeGeometry( shape );
-					var material = new THREE.MeshBasicMaterial( { color: color, overdraw: true } );
-
-					var mesh = new THREE.Mesh( geometry, material );
-					mesh.position.set( x, y, z );
-					mesh.rotation.set( rx, ry, rz );
-					mesh.scale.set( s, s, s );
-					scene.add( mesh );
-
-					// line
-
-					var geometry = shape.createPointsGeometry();
-					var material = new THREE.LineBasicMaterial( { linewidth: 10, color: 0x333333, transparent: true } );
-
-					var line = new THREE.Line( geometry, material );
-					line.position.set( x, y, z );
-					line.rotation.set( rx, ry, rz );
-					line.scale.set( s, s, s );
-					scene.add( line );
-
-				}
 		
 		function animate() 
 		{
@@ -244,17 +284,55 @@
 			requestAnimationFrame( animate );
 			
 			//fps meter update
-			//stats.update();
+			stats.update();
 			
-			//rotate camera position
-			//var timer = Date.now() * 0.0002;
-			//camera.position.x = Math.cos( timer ) * 2000;
-			//camera.position.z = Math.sin( timer ) * 2000;
-			//camera.lookAt( scene.position );
-			 
-			//suite.run();
-			
-			renderer.render( scene, camera );
+			if(waitTime == 0)
+			{			
+				console.log("MAKE SQUARE!");
+				var i;
+				for(i = 0; i < 200; i++)
+				{
+					makeSquare();
+				}
+				
+				console.log("TIMING THE RENDER");
+				var timebefore = performance.now();
+				//console.log("before: ", timebefore);
+				renderer.render( scene, camera );
+				var timeafter = performance.now();
+				//console.log("after: ", timeafter);
+				
+				if(timeafter-timebefore > 0)
+				{
+					console.log("difference: ", timeafter-timebefore);
+				}
+				
+				//clear square
+				waitTime = waitFrames;
+				
+			}
+			else
+			{
+				//render the blank scene and wait
+				removeSceneObjects();
+				renderer.render( scene, camera );
+				waitTime--;
+			}
+		}
+		
+		function removeSceneObjects ()
+		{
+			var obj, i;
+			console.log("scene.children.length: ", scene.children.length);
+			for ( i = scene.children.length - 1; i >= 0 ; i -- ) 
+			{
+				obj = scene.children[i];
+				if (obj !== camera) 
+				{
+					scene.remove(obj);	
+				}
+			}
+			console.log("scene.children.length: ", scene.children.length);
 		}
 		
 		function onWindowResize() {
