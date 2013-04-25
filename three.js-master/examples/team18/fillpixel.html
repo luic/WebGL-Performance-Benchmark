@@ -17,19 +17,63 @@
 				margin: 0px;
 				overflow: hidden;
 			}
+			
+			/* tell the SVG path to be a thin blue line without any area fill */
+			path {
+				stroke-width: 1;
+				fill: none;
+			}
+			
+			.data1 {
+				stroke: black;
+			}
+
+			.data2 {
+				stroke: orange;
+			}
+			
+			.axis {
+			  shape-rendering: crispEdges;
+			}
+
+			.x.axis line {
+			  stroke: lightgrey;
+			}
+
+			.x.axis .minor {
+			  stroke-opacity: .5;
+			}
+
+			.x.axis path {
+			  display: none;
+			}
+			
+			.x.axis text {
+				font-size: 10px;
+			}
+
+			.y.axis line, .y.axis path {
+			  fill: none;
+			  stroke: #000;
+			}
+			
+			.y.axis text {
+				font-size: 12px;
+			}
+			
 		</style>
 	</head>
 	<body>
 
 		<script src="../../build/three.min.js"></script>
 		<script src="../js/Detector.js"></script>
-		<script src="../js/libs/stats.js-r9/src/Stats.js"></script>
+		<script src="stats.js-r9/src/Stats.js"></script>
 		<script src="../../test/benchmark/benchmark-1.0.0.js"></script>
-		
-		<!-- <script src="js/libs/stats-new.min.js"></script>			//custom
-		//<script src="js/libs/stats.min - Copy.js"></script>		//original -->
+		<script src="d3.v3/d3.v3.js"></script>
 		
 		<text id="STATUS_ID" style="position: absolute; top:100px">Status: </text>
+		
+		<div id="graph" class="aGraph" style="position:absolute;top:0px;left:0; float:left;"></div>
 		
 		<script>
 
@@ -65,6 +109,24 @@
 		
 		var timebefore = 0;
 		var timeafter = 0;
+		
+		var timeframe = 0;
+		var calcFrame = 0;
+		
+		var frameNum = 0;
+		var endFrame = 120;
+		
+		var numSquares = 1;
+		var failNum = 0;
+		
+		var request;
+		
+		var frameNumSquares = new Array();
+		var frameTime = new Array();
+		
+		frameNumSquares[0] = 0;
+		frameTime[0] = 0;
+		
 		
 		function runBenchmark () 
 		{
@@ -178,9 +240,7 @@
 			 init();
 			 console.log("begin animate");
 			 animate();
-			 //requestAnimationFrame( animate );
 			 
-			//renderer.render( scene, camera );
 			//runBenchmark();
 		 } else {	
 			 var warning = Detector.getWebGLErrorMessage();
@@ -250,11 +310,11 @@
 			var geometry = shape.createPointsGeometry();
 			var material = new THREE.LineBasicMaterial( { linewidth: 10, color: 0x333333, transparent: true } );
 
-			var line = new THREE.Line( geometry, material );
-			line.position.set( x, y, z );
-			line.rotation.set( rx, ry, rz );
-			line.scale.set( s, s, s );
-			scene.add( line );
+			// var line = new THREE.Line( geometry, material );
+			// line.position.set( x, y, z );
+			// line.rotation.set( rx, ry, rz );
+			// line.scale.set( s, s, s );
+			// scene.add( line );
 		}
 		
 		function makeSquare() 
@@ -281,49 +341,76 @@
 		function animate() 
 		{
 			// note: three.js includes requestAnimationFrame shim
-			requestAnimationFrame( animate );
+			request = requestAnimationFrame( animate );
+			frameNum = frameNum+1;
+			calcFrame = performance.now() - timeframe;
+			console.log("time between: ", calcFrame);
+			timeframe = performance.now();
 			
-			//fps meter update
-			stats.update();
+			frameNumSquares[frameNum] = numSquares;
+			frameTime[frameNum] = calcFrame;
 			
-			if(waitTime == 0)
-			{			
-				console.log("MAKE SQUARE!");
-				var i;
-				for(i = 0; i < 200; i++)
-				{
-					makeSquare();
-				}
-				
-				console.log("TIMING THE RENDER");
-				var timebefore = performance.now();
-				//console.log("before: ", timebefore);
-				renderer.render( scene, camera );
-				var timeafter = performance.now();
-				//console.log("after: ", timeafter);
-				
-				if(timeafter-timebefore > 0)
-				{
-					console.log("difference: ", timeafter-timebefore);
-				}
-				
-				//clear square
-				waitTime = waitFrames;
-				
-			}
-			else
+			if( frameNum > endFrame)
 			{
-				//render the blank scene and wait
-				removeSceneObjects();
-				renderer.render( scene, camera );
-				waitTime--;
-			}
+				// if( calcFrame > 18)
+				// {
+					// failNum = numSquares;
+					// console.log("Num Squares at Fail: ", failNum);
+					cancelAnimationFrame(request);
+					printData();
+					createGraph();
+				// }
+			}	
+				//fps meter update
+				stats.update();
+				
+				//if(waitTime == 0)
+				//{			
+					console.log("MAKE SQUARE!");
+					var i;
+					
+					if(frameNum%3 == 0)
+					{
+						numSquares = numSquares+1;
+
+					}
+					console.log("Num Squares: ", numSquares);
+					for(i = 0; i < numSquares; i++)
+					{
+						makeSquare();
+					}
+					
+					//console.log("TIMING THE RENDER");
+					//timebefore = performance.now();
+					//console.log("before: ", timebefore);
+					renderer.render( scene, camera );
+					//renderer.context.finish();
+					//timeafter = performance.now();
+					//console.log("after: ", timeafter);
+					
+					// if(timeafter-timebefore > 0)
+					// {
+						// console.log("difference: ", timeafter-timebefore);
+					// }
+					
+					//clear square
+				//	waitTime = waitFrames;
+					
+				//}
+				// else
+				// {
+					// //render the blank scene and wait
+					 removeSceneObjects();
+					// renderer.render( scene, camera );
+					// waitTime--;
+				// }
+			
 		}
 		
 		function removeSceneObjects ()
 		{
 			var obj, i;
-			console.log("scene.children.length: ", scene.children.length);
+			//console.log("scene.children.length: ", scene.children.length);
 			for ( i = scene.children.length - 1; i >= 0 ; i -- ) 
 			{
 				obj = scene.children[i];
@@ -332,8 +419,94 @@
 					scene.remove(obj);	
 				}
 			}
-			console.log("scene.children.length: ", scene.children.length);
+			//console.log("scene.children.length: ", scene.children.length);
 		}
+		
+		function printData() 
+		{
+			var i;
+			for(i = 1; i < frameNumSquares.length; i++)
+			{
+				console.log("\nFrame number: ", i);
+				console.log("Number of squares: ", frameNumSquares[i] );
+				console.log("Draw time: ", frameTime[i]);
+			}
+		}
+		
+		function createGraph() 
+		{
+			// define dimensions of graph
+			var m = [80, 80, 80, 80]; // margins
+			var w = 1000 - m[1] - m[3];	// width
+			var h = 400 - m[0] - m[2]; // height
+			
+			var x = d3.scale.linear().domain([0, endFrame]).range([0, w]);
+			var y = d3.scale.linear().domain([d3.max(frameTime), 0]).range([0, h]);
+			
+			// create a line function that can convert data[] into x and y points
+		var line1 = d3.svg.line()
+			// assign the X function to plot our line as we wish
+			.x(function(d,i) { 
+				// verbose logging to show what's actually being done
+				//console.log('Plotting X value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
+				// return the X coordinate where we want to plot this datapoint
+				return x(i); 
+			})
+			.y(function(d) { 
+				// verbose logging to show what's actually being done
+				//console.log('Plotting Y value for data point: ' + d + ' to be at: ' + y(d) + " using our yScale.");
+				// return the Y coordinate where we want to plot this datapoint
+				return y(d); // use the 1st index of data (for example, get 20 from [20,13])
+			})
+			
+			// var line2 = d3.svg.line()
+				// // assign the X function to plot our line as we wish
+				// .x(function(d,i) { 
+					// // verbose logging to show what's actually being done
+					// //console.log('Plotting X value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
+					// // return the X coordinate where we want to plot this datapoint
+					// return x(startTime.getTime() + (timeStep*i)); 
+				// })
+				// .y(function(d) { 
+					// // verbose logging to show what's actually being done
+					// //console.log('Plotting Y value for data point: ' + d + ' to be at: ' + y(d) + " using our yScale.");
+					// // return the Y coordinate where we want to plot this datapoint
+					// return y(d[1]); // use the 2nd index of data (for example, get 13 from [20,13])
+				// })
+
+
+			// Add an SVG element with the desired dimensions and margin.
+			var graph = d3.select("#graph").append("svg:svg")
+			      .attr("width", w + m[1] + m[3])
+			      .attr("height", h + m[0] + m[2])
+			    .append("svg:g")
+			      .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+
+			// create yAxis
+			var xAxis = d3.svg.axis().scale(x).tickSize(-h).tickSubdivide(1);
+
+			// Add the x-axis.
+			graph.append("svg:g")
+			      .attr("class", "x axis")
+			      .attr("transform", "translate(0," + h + ")")
+			      .call(xAxis);
+
+
+			// create left yAxis
+			var yAxisLeft = d3.svg.axis().scale(y).ticks(6).orient("left");
+			// Add the y-axis to the left
+			graph.append("svg:g")
+			      .attr("class", "y axis")
+			      .attr("transform", "translate(-10,0)")
+			      .call(yAxisLeft);
+			
+  			// add lines
+  			// do this AFTER the axes above so that the line is above the tick-lines
+    		graph.append("svg:path").attr("d", line1(frameTime)).attr("class", "data1");
+    		//graph.append("svg:path").attr("d", line2(data)).attr("class", "data2");
+
+		}
+
 		
 		function onWindowResize() {
 
