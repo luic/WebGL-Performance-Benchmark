@@ -71,7 +71,7 @@
 		<script src="../../test/benchmark/benchmark-1.0.0.js"></script>
 		<script src="d3.v3/d3.v3.js"></script>
 		
-		<text id="STATUS_ID" style="position: absolute; top:100px">Status: </text>
+		<text id="TITLE" style="position: absolute; top:100px">Fill Pixel Z-Buffering [ENABLED]</text>
 		
 		<div id="graph" class="aGraph" style="position:absolute;top:0px;left:0; float:left;"></div>
 		
@@ -118,6 +118,8 @@
 		
 		var numSquares = 1;
 		var failNum = 0;
+		
+		var maxYaxis = 150;
 		
 		var request;
 		
@@ -335,7 +337,7 @@
 			squareShape.lineTo( 0, 0 );
 			
 			//scene.add(squareShape);
-			addShape( squareShape, 0x0055ff, 150, 100, 0, 0, 0, 0, 1 );
+			addShape( squareShape, '#'+Math.floor(Math.random()*16777215).toString(16), 150, 100, 0, 0, 0, 0, 1 );
 		}
 		
 		function animate() 
@@ -357,6 +359,7 @@
 					// failNum = numSquares;
 					// console.log("Num Squares at Fail: ", failNum);
 					cancelAnimationFrame(request);
+					fixData();
 					printData();
 					createGraph();
 				// }
@@ -407,6 +410,18 @@
 			
 		}
 		
+		function fixData()
+		{
+			var i;
+			for(i = 1; i < endFrame; i++)
+			{
+				if (frameTime[i] > maxYaxis)
+				{
+					frameTime[i] = maxYaxis;
+				}
+			}
+		}
+		
 		function removeSceneObjects ()
 		{
 			var obj, i;
@@ -436,15 +451,15 @@
 		function createGraph() 
 		{
 			// define dimensions of graph
-			var m = [80, 80, 80, 80]; // margins
+			var m = [160, 80, 80, 80]; // margins
 			var w = 1000 - m[1] - m[3];	// width
-			var h = 400 - m[0] - m[2]; // height
+			var h = 400; // height
 			
 			var x = d3.scale.linear().domain([0, endFrame]).range([0, w]);
-			var y = d3.scale.linear().domain([d3.max(frameTime), 0]).range([0, h]);
+			var y = d3.scale.linear().domain([150, 0]).range([0, h]);
 			
 			// create a line function that can convert data[] into x and y points
-		var line1 = d3.svg.line()
+			var line1 = d3.svg.line()
 			// assign the X function to plot our line as we wish
 			.x(function(d,i) { 
 				// verbose logging to show what's actually being done
@@ -499,6 +514,18 @@
 			      .attr("class", "y axis")
 			      .attr("transform", "translate(-10,0)")
 			      .call(yAxisLeft);
+				  
+			graph.append("text")
+				  .attr("transform", "translate(-75, 250) rotate(-90)")
+				  .attr("y", 6)
+				  .attr("dy", ".71em")
+				  .text("Render Time (ms)");
+				  
+			graph.append("text")
+				  .attr("transform", "translate(200, 440)")
+				  .attr("x", 6)
+				  .attr("dx", ".71em")
+				  .text("Frame Number");
 			
   			// add lines
   			// do this AFTER the axes above so that the line is above the tick-lines
