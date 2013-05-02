@@ -1,19 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>Pixel Fill Benchmark</title>
+		<title>Pixel Fill Rate Benchmark Z-Buffer [DISABLED]</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			#container {
-				background: #000;
+				background: #6495ED;
+				background-color: #6495ED; 
 			}
 			
 			body {
 				font-family: Monospace;
 				<!--background: #000; -->
 				background: #f0f0f0; 
-				background-color: #f0f0f0; 
+				background-color: #6495ED; 
 				margin: 0px;
 				overflow: hidden;
 			}
@@ -63,7 +64,7 @@
 			
 		</style>
 	</head>
-	<body>
+	<body  style="overflow:auto;">
 
 		<script src="../../build/three.min.js"></script>
 		<script src="../js/Detector.js"></script>
@@ -76,6 +77,8 @@
 		<div id="graph" class="aGraph" style="position:absolute;top:0px;left:0; float:left;"></div>
 		
 		<script>
+		
+		
 
 		var numObjects = 2000;					//max objects
 		var targetFPS = 50;						//highest fps before adding objects
@@ -114,21 +117,32 @@
 		var calcFrame = 0;
 		
 		var frameNum = 0;
-		var endFrame = 120;
+		var endFrame = 240;
 		
 		var numSquares = 1;
 		var failNum = 0;
+		
+		var maxYaxis = 100;
 		
 		var request;
 		
 		var frameNumSquares = new Array();
 		var frameTime = new Array();
 		
-		var maxYaxis = 150;
-		
 		frameNumSquares[0] = 0;
 		frameTime[0] = 0;
 		
+		// Square
+		var sqLength = 80;
+		var x = 5000; //window.innerWidth;
+		var y = 5000; //window.innerHeight;
+		var squareShape = new THREE.Shape();
+		squareShape.moveTo( 0,0 );
+		squareShape.lineTo( 0, y );
+		squareShape.lineTo( x, y );
+		squareShape.lineTo( x, 0 );
+		squareShape.lineTo( 0, 0 );
+
 		
 		function runBenchmark () 
 		{
@@ -240,7 +254,7 @@
 		//Check that browser supports WebGL, else exit nicely
 		 if (Detector.webgl) {
 			 init();
-			 console.log("begin animate");
+			 //console.log("begin animate");
 			 animate();
 			 
 			//runBenchmark();
@@ -271,9 +285,9 @@
 			renderer.sortObjects = false;
 			renderer.sortElements = false;
 			container.appendChild( renderer.domElement );
-			//renderer.context.gl.disable(renderer.context.gl.DEPTH_TEST);
+			
+			//Disable Z-Buffering
 			renderer.setDepthTest(false);
-			//gl.enable(DEPTH_TEST);
 			
 			//add stats
 			stats = new Stats();
@@ -324,25 +338,33 @@
 		
 		function makeSquare() 
 		{
-			// Square
-			var sqLength = 80;
-			var x = 5000; //window.innerWidth;
-			var y = 5000; //window.innerHeight;
 			
-			//console.log("window.innerWidth: ", window.innerWidth);
-			//console.log("window.innerHeight: ", window.innerHeight);
+			// // Square
+			// var sqLength = 80;
+			// var x = 5000; //window.innerWidth;
+			// var y = 5000; //window.innerHeight;
+			
+			// //console.log("window.innerWidth: ", window.innerWidth);
+			// //console.log("window.innerHeight: ", window.innerHeight);
 
-			var squareShape = new THREE.Shape();
-			squareShape.moveTo( 0,0 );
-			squareShape.lineTo( 0, y );
-			squareShape.lineTo( x, y );
-			squareShape.lineTo( x, 0 );
-			squareShape.lineTo( 0, 0 );
+			// var squareShape = new THREE.Shape();
+			// squareShape.moveTo( 0,0 );
+			// squareShape.lineTo( 0, y );
+			// squareShape.lineTo( x, y );
+			// squareShape.lineTo( x, 0 );
+			// squareShape.lineTo( 0, 0 );
 			
 			//scene.add(squareShape);
-			addShape( squareShape, '#'+Math.floor(Math.random()*16777215).toString(16), 150, 100, 0, 0, 0, 0, 1 );
 			
-			//= '#'+Math.floor(Math.random()*16777215).toString(16);
+			//on the final frame, make the screen a set color so it's easy to read 
+			if(frameNum >= endFrame)
+			{
+				addShape( squareShape, '#6495ED', 150, 100, 0, 0, 0, 0, 1 );
+			}
+			else
+			{
+				addShape( squareShape, '#'+Math.floor(Math.random()*16777215).toString(16), 150, 100, 0, 0, 0, 0, 1 );
+			}
 		}
 		
 		function animate() 
@@ -351,12 +373,11 @@
 			request = requestAnimationFrame( animate );
 			frameNum = frameNum+1;
 			calcFrame = performance.now() - timeframe;
-			console.log("time between: ", calcFrame);
+			//console.log("time between: ", calcFrame);
 			timeframe = performance.now();
 			
 			frameNumSquares[frameNum] = numSquares;
 			frameTime[frameNum] = calcFrame;
-			
 			
 			if( frameNum > endFrame)
 			{
@@ -365,8 +386,10 @@
 					// failNum = numSquares;
 					// console.log("Num Squares at Fail: ", failNum);
 					cancelAnimationFrame(request);
+					removeSceneObjects();
 					fixData();
-					printData();
+					smoothData();
+					//printData();
 					createGraph();
 				// }
 			}	
@@ -375,47 +398,29 @@
 				
 				//if(waitTime == 0)
 				//{			
-					console.log("MAKE SQUARE!");
+					//console.log("MAKE SQUARE!");
 					var i;
 					
 					if(frameNum%3 == 0)
 					{
 						numSquares = numSquares+1;
+						makeSquare();
 
 					}
-					console.log("Num Squares: ", numSquares);
-					for(i = 0; i < numSquares; i++)
-					{
-						makeSquare();
-					}
+					//console.log("Num Squares: ", numSquares);
+					// for(i = 0; i < numSquares; i++)
+					// {
+						// makeSquare();
+					// }
 					
 					//console.log("TIMING THE RENDER");
 					//timebefore = performance.now();
 					//console.log("before: ", timebefore);
 					renderer.render( scene, camera );
-					//renderer.context.finish();
-					//timeafter = performance.now();
-					//console.log("after: ", timeafter);
-					
-					// if(timeafter-timebefore > 0)
-					// {
-						// console.log("difference: ", timeafter-timebefore);
-					// }
-					
-					//clear square
-				//	waitTime = waitFrames;
-					
-				//}
-				// else
-				// {
-					// //render the blank scene and wait
-					 removeSceneObjects();
-					// renderer.render( scene, camera );
-					// waitTime--;
-				// }
-			
+					renderer.context.finish();
 		}
 		
+		//protects the data from going out of the graph
 		function fixData()
 		{
 			var i;
@@ -426,6 +431,20 @@
 					frameTime[i] = maxYaxis;
 				}
 			}
+		}
+		
+		//smooth the data on the graph in order to see the trend
+		function smoothData()
+		{
+			var i;
+			for(i = 3; i < endFrame; i++)
+			{
+				if(frameTime[i] >= (2* frameTime[i-1]) )
+				{
+					frameTime[i] = ( (frameTime[i] + frameTime[i-1] + frameTime[i-2]) / 3);
+				}
+			}
+		
 		}
 		
 		function removeSceneObjects ()
@@ -458,11 +477,11 @@
 		{
 			// define dimensions of graph
 			var m = [160, 80, 80, 80]; // margins
-			var w = 1000 - m[1] - m[3];	// width
+			var w = (1000 - m[1] - m[3]);	// width
 			var h = 400; // height
 			
 			var x = d3.scale.linear().domain([0, endFrame]).range([0, w]);
-			var y = d3.scale.linear().domain([150, 0]).range([0, h]);
+			var y = d3.scale.linear().domain([maxYaxis, 0]).range([0, h]);
 			
 			// create a line function that can convert data[] into x and y points
 			var line1 = d3.svg.line()
