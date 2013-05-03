@@ -122,6 +122,8 @@
 		var frameNumSquares = new Array(endFrame - badData);
 		var frameTime = new Array(endFrame - badData);
 		
+		var inc = 0;			//used for moving the next object in the other objects
+		
 		//frameNumSquares[0] = 0;
 		//frameTime[0] = 0;
 		
@@ -194,21 +196,10 @@
 			var material = new THREE.MeshBasicMaterial( { color: color, overdraw: true } );
 
 			var mesh = new THREE.Mesh( geometry, material );
-			mesh.position.set( x, y, z );
+			mesh.position.set( x, y, z + (inc++) );		//move the next object closer to the camera
 			mesh.rotation.set( rx, ry, rz );
 			mesh.scale.set( s, s, s );
 			scene.add( mesh );
-			
-			//if(prevMaterial)
-			//{
-				//prevMaterial.opacity(0);
-				//prevMesh.setMaterial = prevMaterial;
-				//scene.remove(prevMesh);
-			//}
-			
-			//prevMaterial = material;
-			//prevMesh = mesh;
-			
 			
 			
 			// line
