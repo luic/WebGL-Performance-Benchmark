@@ -79,8 +79,6 @@
 		<script>
 		
 		
-
-		var numObjects = 2000;					//max objects
 		var targetFPS = 50;						//highest fps before adding objects
 		var varyFPS = targetFPS / 10;			//allowed range of FPS
 		var	lowestFPS = targetFPS - varyFPS;	//lowest FPS before taking out objects
@@ -92,11 +90,9 @@
 		var camera, renderer;
 		var scene = new THREE.Scene();
 		var geometry, material, material2;
-		//var geometries = new THREE.CubeGeometry(10);
-		var meshes = new Array(numObjects);
-		var colors = new Array(numObjects);
+		
 		var addFlag = 0;						// -1 = remove, 1 = add, 0 = nothing
-		var waitFrames = 60;						// wait time between adding/removing objects
+		var waitFrames = 60;					// wait time between adding/removing objects
 		var waitTime = 0;						// amount of frames to wait
 		
 		var windowHalfX = window.innerWidth / 2;
@@ -107,17 +103,14 @@
 
 		var mouseX = 0;
 		var mouseXOnMouseDown = 0;
-
-		var runs = 0;
-		
-		var timebefore = 0;
-		var timeafter = 0;
 		
 		var timeframe = 0;
 		var calcFrame = 0;
 		
 		var frameNum = 0;
-		var endFrame = 240;
+		var endFrame = 250;
+		
+		var badData = 10;
 		
 		var numSquares = 1;
 		var failNum = 0;
@@ -126,13 +119,13 @@
 		
 		var request;
 		
-		var frameNumSquares = new Array();
-		var frameTime = new Array();
+		var frameNumSquares = new Array(endFrame - badData);
+		var frameTime = new Array(endFrame - badData);
 		
-		frameNumSquares[0] = 0;
-		frameTime[0] = 0;
+		//frameNumSquares[0] = 0;
+		//frameTime[0] = 0;
 		
-		// Square
+		// Square shape
 		var sqLength = 80;
 		var x = 5000; //window.innerWidth;
 		var y = 5000; //window.innerHeight;
@@ -142,122 +135,14 @@
 		squareShape.lineTo( x, y );
 		squareShape.lineTo( x, 0 );
 		squareShape.lineTo( 0, 0 );
-
 		
-		function runBenchmark () 
-		{
-			var suite = new Benchmark.Suite;
-			
-			// add tests
-			suite.add('fillrate', function() {
-			  //mydiv.insertAdjacentHTML('beforeend', '<span></span>');
-			  //render();
-			  //console.log("inside the fill rate test");
-			  //console.log("fillrate-benchmark");
-			  //init();
-			  //number++;
-			  runs = runs + 1;
-			  //console.log("run #: ", runs);
-			  //init();
-			  //animate();
-			  
-			  //var TargetFPS = document.getElementById('STATUS_ID');
-			//TargetFPS.innerHTML = "Target FPS: " +runs;
-			  
-			  //requestAnimationFrame( animate );
-			
-			//fps meter update
-			//stats.update();
-			
-			//rotate camera position
-			//var timer = Date.now() * 0.0002;
-			//camera.position.x = Math.cos( timer ) * 2000;
-			//camera.position.z = Math.sin( timer ) * 2000;
-			//camera.lookAt( scene.position );
-			 
-			//renderer.render( scene, camera );
-			  
-			})
-			
-			suite.add('test2', function() {
-			  //mydiv.insertAdjacentHTML('beforeend', '<span></span>');
-			  //render();
-			  //console.log("inside the fill rate test");
-			  console.log("test2-benchmark");
-			  //init();
-			  //number++;
-			  runs = runs + 1;
-			  //init();
-			  //animate();
-			  
-			  //var TargetFPS = document.getElementById('STATUS_ID');
-			//TargetFPS.innerHTML = "Target FPS: " +runs;
-			  
-			  //requestAnimationFrame( animate );
-			
-			//fps meter update
-			//stats.update();
-			
-			//rotate camera position
-			//var timer = Date.now() * 0.0002;
-			//camera.position.x = Math.cos( timer ) * 2000;
-			//camera.position.z = Math.sin( timer ) * 2000;
-			//camera.lookAt( scene.position );
-			 
-			//renderer.render( scene, camera );
-			  
-			})
-			 
-			// Additional options for the test
-			
-			 .on('setup', function() {
-				console.log("setup");
-				//var mydiv = document.getElementById('mydiv');
-				//time = performance.now();
-				//runs = runs + 1;
-			  })
-			  .on('teardown', function() {
-				console.log("teardown");
-				//mydiv.innerHTML = '';
-				//endtime = performance.now();
-				//console.log("difference: ", endtime - time);
-				//console.log("pluck test: " +this.filter(fastest).pluck('name') );
-				//console.log('Fastest is ' + this.filter('fastest').pluck('name'));
-				//console.log('Fastest is ' + this.filter('successful').pluck('name'));
-			  })
-			  .on('start', function() {
-				console.log("benchmark start");
-				
-			  })
-			  // add listeners
-			  .on('cycle', function(event) {
-				console.log("cycle");
-				console.log(String(event.target));
-			  })
-			  // 
-			  .on('complete', function() {
-				console.log("complete");
-				console.log('Fastest is ' + this.filter('fastest').pluck('name'));
-				console.log('minTime is ' + this.filter('successful').pluck('minTime'));
-				console.log('maxTime is ' + this.filter('successful').pluck('maxTime'));
-				console.log('stats: ' + this.filter('successful').pluck('stats.variance'));
-			  })
-			  .on('abort', function() {
-				console.log("abort");
-			  })
-		
-		//suite.run();
-		
-		}
-	
+		var prevMaterial, prevMesh;
 		
 		//Check that browser supports WebGL, else exit nicely
 		 if (Detector.webgl) {
 			 init();
 			 //console.log("begin animate");
 			 animate();
-			 
-			//runBenchmark();
 		 } else {	
 			 var warning = Detector.getWebGLErrorMessage();
 			 document.getElementById('container').appendChild(warning);
@@ -275,9 +160,6 @@
 			camera.position.y = window.innerHeight / 2;
 			camera.position.z = 1000;
 			camera.position.set( 2500, 2500, 500 );
-
-			//make square used to be here
-			makeSquare();
 
 			//renderer = new THREE.CanvasRenderer();
 			renderer = new THREE.WebGLRenderer();
@@ -302,14 +184,6 @@
 			//stats.domElement.style.position = 'absolute';
 			//stats.domElement.style.top = '0px';
 			//container.appendChild( stats.domElement );
-			
-			// document.addEventListener( 'mousedown', onDocumentMouseDown, false );
-			// document.addEventListener( 'touchstart', onDocumentTouchStart, false );
-			// document.addEventListener( 'touchmove', onDocumentTouchMove, false );
-
-			// //
-
-			// window.addEventListener( 'resize', onWindowResize, false );
 		}
 
 		function addShape( shape, color, x, y, z, rx, ry, rz, s ) 
@@ -324,10 +198,22 @@
 			mesh.rotation.set( rx, ry, rz );
 			mesh.scale.set( s, s, s );
 			scene.add( mesh );
-
+			
+			//if(prevMaterial)
+			//{
+				//prevMaterial.opacity(0);
+				//prevMesh.setMaterial = prevMaterial;
+				//scene.remove(prevMesh);
+			//}
+			
+			//prevMaterial = material;
+			//prevMesh = mesh;
+			
+			
+			
 			// line
-			var geometry = shape.createPointsGeometry();
-			var material = new THREE.LineBasicMaterial( { linewidth: 10, color: 0x333333, transparent: true } );
+			//var geometry = shape.createPointsGeometry();
+			//var material = new THREE.LineBasicMaterial( { linewidth: 10, color: 0x333333, transparent: true } );
 
 			// var line = new THREE.Line( geometry, material );
 			// line.position.set( x, y, z );
@@ -336,41 +222,13 @@
 			// scene.add( line );
 		}
 		
-		function makeSquare() 
-		{
-			
-			// // Square
-			// var sqLength = 80;
-			// var x = 5000; //window.innerWidth;
-			// var y = 5000; //window.innerHeight;
-			
-			// //console.log("window.innerWidth: ", window.innerWidth);
-			// //console.log("window.innerHeight: ", window.innerHeight);
-
-			// var squareShape = new THREE.Shape();
-			// squareShape.moveTo( 0,0 );
-			// squareShape.lineTo( 0, y );
-			// squareShape.lineTo( x, y );
-			// squareShape.lineTo( x, 0 );
-			// squareShape.lineTo( 0, 0 );
-			
-			//scene.add(squareShape);
-			
-			//on the final frame, make the screen a set color so it's easy to read 
-			if(frameNum >= endFrame)
-			{
-				addShape( squareShape, '#6495ED', 150, 100, 0, 0, 0, 0, 1 );
-			}
-			else
-			{
-				addShape( squareShape, '#'+Math.floor(Math.random()*16777215).toString(16), 150, 100, 0, 0, 0, 0, 1 );
-			}
-		}
 		
 		function animate() 
 		{
 			// note: three.js includes requestAnimationFrame shim
 			request = requestAnimationFrame( animate );
+			
+			//record the time between each frame
 			frameNum = frameNum+1;
 			calcFrame = performance.now() - timeframe;
 			//console.log("time between: ", calcFrame);
@@ -379,10 +237,11 @@
 			frameNumSquares[frameNum] = numSquares;
 			frameTime[frameNum] = calcFrame;
 			
-			if( frameNum > endFrame)
+			//check if we are at the end of the program
+			if(frameNum >= endFrame)
 			{
-				// if( calcFrame > 18)
-				// {
+				 //if( calcFrame > 18)
+				 //{
 					// failNum = numSquares;
 					// console.log("Num Squares at Fail: ", failNum);
 					cancelAnimationFrame(request);
@@ -391,39 +250,47 @@
 					smoothData();
 					//printData();
 					createGraph();
-				// }
+				 //}
 			}	
-				//fps meter update
-				stats.update();
+			
+			
+			//fps meter update
+			stats.update();
+			
+			var i;
+			
+			//add a square every third frame
+			if(frameNum%2 == 0)
+			{
+				//on the final frame, make the screen a set color so it's easy to read 
+				if(frameNum >= endFrame)
+				{
+					addShape( squareShape, '#6495ED', 150, 100, 0, 0, 0, 0, 1 );
+				}
+				else	//random color square
+				{
+					addShape( squareShape, '#'+Math.floor(Math.random()*16777215).toString(16), 150, 100, 0, 0, 0, 0, 1 );
+				}
 				
-				//if(waitTime == 0)
-				//{			
-					//console.log("MAKE SQUARE!");
-					var i;
-					
-					if(frameNum%3 == 0)
-					{
-						numSquares = numSquares+1;
-						makeSquare();
-
-					}
-					//console.log("Num Squares: ", numSquares);
-					// for(i = 0; i < numSquares; i++)
-					// {
-						// makeSquare();
-					// }
-					
-					//console.log("TIMING THE RENDER");
-					//timebefore = performance.now();
-					//console.log("before: ", timebefore);
-					renderer.render( scene, camera );
-					renderer.context.finish();
+				numSquares = numSquares+1;
+			}
+			
+			renderer.render( scene, camera );
+			
+			//ensure renderer is finished before moving on to the next frame
+			renderer.context.finish();
+			
+			
 		}
 		
-		//protects the data from going out of the graph
+		//protects the data from going out of the graph, and remove the bad data
 		function fixData()
 		{
 			var i;
+			
+			//replace the frametime array with an array without the first X values
+			frameTime = frameTime.slice(badData, endFrame);
+			
 			for(i = 1; i < endFrame; i++)
 			{
 				if (frameTime[i] > maxYaxis)
@@ -444,10 +311,10 @@
 					frameTime[i] = ( (frameTime[i] + frameTime[i-1] + frameTime[i-2]) / 3);
 				}
 			}
-		
 		}
 		
-		function removeSceneObjects ()
+		//remove all objects from the scene
+		function removeSceneObjects()
 		{
 			var obj, i;
 			//console.log("scene.children.length: ", scene.children.length);
@@ -462,6 +329,7 @@
 			//console.log("scene.children.length: ", scene.children.length);
 		}
 		
+		//debug function to print out the recorded data
 		function printData() 
 		{
 			var i;
@@ -473,6 +341,7 @@
 			}
 		}
 		
+		//Creation of the d3.js line graph
 		function createGraph() 
 		{
 			// define dimensions of graph
@@ -556,88 +425,8 @@
   			// do this AFTER the axes above so that the line is above the tick-lines
     		graph.append("svg:path").attr("d", line1(frameTime)).attr("class", "data1");
     		//graph.append("svg:path").attr("d", line2(data)).attr("class", "data2");
-
 		}
-
-		
-		function onWindowResize() {
-
-				windowHalfX = window.innerWidth / 2;
-				windowHalfY = window.innerHeight / 2;
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-			}
-
-			//
-
-			function onDocumentMouseDown( event ) {
-
-				event.preventDefault();
-
-				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-				document.addEventListener( 'mouseup', onDocumentMouseUp, false );
-				document.addEventListener( 'mouseout', onDocumentMouseOut, false );
-
-				mouseXOnMouseDown = event.clientX - windowHalfX;
-				targetRotationOnMouseDown = targetRotation;
-
-			}
-
-			function onDocumentMouseMove( event ) {
-
-				mouseX = event.clientX - windowHalfX;
-
-				targetRotation = targetRotationOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.02;
-
-			}
-
-			function onDocumentMouseUp( event ) {
-
-				document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
-				document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
-				document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
-
-			}
-
-			function onDocumentMouseOut( event ) {
-
-				document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
-				document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
-				document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
-
-			}
-
-			function onDocumentTouchStart( event ) {
-
-				if ( event.touches.length == 1 ) {
-
-					event.preventDefault();
-
-					mouseXOnMouseDown = event.touches[ 0 ].pageX - windowHalfX;
-					targetRotationOnMouseDown = targetRotation;
-
-				}
-
-			}
-
-			function onDocumentTouchMove( event ) {
-
-				if ( event.touches.length == 1 ) {
-
-					event.preventDefault();
-
-					mouseX = event.touches[ 0 ].pageX - windowHalfX;
-					targetRotation = targetRotationOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.05;
-
-				}
-
-			}
 		
 		</script>
-
 	</body>
 </html>
