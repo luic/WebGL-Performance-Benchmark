@@ -108,12 +108,11 @@
 		var calcFrame = 0;
 		
 		var frameNum = 0;
-		var endFrame = 250;
+		var endFrame = 130;
 		
 		var badData = 10;
 		
 		var numSquares = 1;
-		var failNum = 0;
 		
 		var maxYaxis = 100;
 		
@@ -121,6 +120,14 @@
 		
 		var frameNumSquares = new Array(endFrame - badData);
 		var frameTime = new Array(endFrame - badData);
+		
+		var runData1 = new Array(endFrame - badData);
+		var runData2 = new Array(endFrame - badData);
+		var runs = 0;
+		
+		var runArrays = new Array(2);
+		runArrays[0] = new Array(endFrame - badData);
+		runArrays[1] = new Array(endFrame - badData);
 		
 		var inc = 0;			//used for moving the next object in the other objects
 		
@@ -231,17 +238,47 @@
 			//check if we are at the end of the program
 			if(frameNum >= endFrame)
 			{
-				 //if( calcFrame > 18)
-				 //{
-					// failNum = numSquares;
-					// console.log("Num Squares at Fail: ", failNum);
+				console.log("runs: ", runs);
+				
+				if(runs >= 1)
+				{
 					cancelAnimationFrame(request);
-					removeSceneObjects();
-					fixData();
-					smoothData();
-					//printData();
+					runData2 = frameTime.slice();
+					runArrays[1] = runData2.slice();
 					createGraph();
-				 //}
+					
+					// console.log("RUN DATA 2");
+					// var i;
+					// for(i = 1; i < endFrame; i++)
+					// {
+						// console.log(runData2[i]);
+					// }
+				}
+				else if(runs == 0)
+				{
+					runData1 = frameTime.slice();
+					runArrays[0] = runData1.slice();
+				}
+				
+				removeSceneObjects();
+				numSquares = 1;
+				
+				var i;
+				for(i = 1; i < endFrame; i++)
+				{
+					console.log(runArrays[0][i]);
+				}
+				
+				fixData(runArrays[runs]);
+				smoothData(runArrays[runs]);
+				//printData(runArrays[runs]);
+				
+				runs++;
+				
+				//clean out variables for the next run
+				timeframe = 0;
+				calcFrame = 0;
+				frameNum = 0;
 			}	
 			
 			
@@ -275,31 +312,33 @@
 		}
 		
 		//protects the data from going out of the graph, and remove the bad data
-		function fixData()
+		function fixData(frameData)
 		{
 			var i;
 			
+			//console.log(frameData);
 			//replace the frametime array with an array without the first X values
-			frameTime = frameTime.slice(badData, endFrame);
+			//frameData = frameData.slice(badData, endFrame);
 			
-			for(i = 1; i < endFrame; i++)
+			for(i = 0; i < endFrame; i++)
 			{
-				if (frameTime[i] > maxYaxis)
+				if (frameData[i] > maxYaxis)
 				{
-					frameTime[i] = maxYaxis;
+					frameData[i] = maxYaxis;
 				}
 			}
 		}
 		
 		//smooth the data on the graph in order to see the trend
-		function smoothData()
+		function smoothData(frameData)
 		{
 			var i;
+			
 			for(i = 3; i < endFrame; i++)
 			{
-				if(frameTime[i] >= (2* frameTime[i-1]) )
+				if(frameData[i] >= (2* frameData[i-1]) )
 				{
-					frameTime[i] = ( (frameTime[i] + frameTime[i-1] + frameTime[i-2]) / 3);
+					frameData[i] = ( (frameData[i] + frameData[i-1] + frameData[i-2]) / 3);
 				}
 			}
 		}
@@ -321,14 +360,14 @@
 		}
 		
 		//debug function to print out the recorded data
-		function printData() 
+		function printData(frameData) 
 		{
 			var i;
 			for(i = 1; i < frameNumSquares.length; i++)
 			{
 				console.log("\nFrame number: ", i);
 				console.log("Number of squares: ", frameNumSquares[i] );
-				console.log("Draw time: ", frameTime[i]);
+				console.log("Draw time: ", frameData[i]);
 			}
 		}
 		
@@ -359,20 +398,20 @@
 				return y(d); // use the 1st index of data (for example, get 20 from [20,13])
 			})
 			
-			// var line2 = d3.svg.line()
+			 var line2 = d3.svg.line()
 				// // assign the X function to plot our line as we wish
-				// .x(function(d,i) { 
+				 .x(function(d,i) { 
 					// // verbose logging to show what's actually being done
 					// //console.log('Plotting X value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
 					// // return the X coordinate where we want to plot this datapoint
 					// return x(startTime.getTime() + (timeStep*i)); 
-				// })
-				// .y(function(d) { 
+				 })
+				 .y(function(d) { 
 					// // verbose logging to show what's actually being done
 					// //console.log('Plotting Y value for data point: ' + d + ' to be at: ' + y(d) + " using our yScale.");
 					// // return the Y coordinate where we want to plot this datapoint
 					// return y(d[1]); // use the 2nd index of data (for example, get 13 from [20,13])
-				// })
+				 })
 
 
 			// Add an SVG element with the desired dimensions and margin.
@@ -415,7 +454,7 @@
   			// add lines
   			// do this AFTER the axes above so that the line is above the tick-lines
     		graph.append("svg:path").attr("d", line1(frameTime)).attr("class", "data1");
-    		//graph.append("svg:path").attr("d", line2(data)).attr("class", "data2");
+    		//graph.append("svg:path").attr("d", line2(runArrays[1])).attr("class", "data1");
 		}
 		
 		</script>
