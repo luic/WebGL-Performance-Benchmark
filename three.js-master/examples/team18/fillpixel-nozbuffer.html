@@ -112,7 +112,7 @@
 		
 		var badData = 10;
 		
-		var numSquares = 1;
+		var numSquares = 0;
 		var failNum = 0;
 		
 		var maxYaxis = 100;
@@ -122,7 +122,9 @@
 		var frameNumSquares = new Array(endFrame - badData);
 		var frameTime = new Array(endFrame - badData);
 		
-		var inc = 0;			//used for moving the next object in the other objects
+		var inc = 0.1;			//used for moving the next object in the other objects
+		
+		var addSpeed = 1;
 		
 		//frameNumSquares[0] = 0;
 		//frameTime[0] = 0;
@@ -196,11 +198,13 @@
 			var material = new THREE.MeshBasicMaterial( { color: color, overdraw: true } );
 
 			var mesh = new THREE.Mesh( geometry, material );
-			mesh.position.set( x, y, z + (inc++) );		//move the next object closer to the camera
+			mesh.position.set( x, y, z + (frameNum*inc) );		//move the next object closer to the camera
+			//mesh.position.set( x, y, z );		//move the next object closer to the camera
 			mesh.rotation.set( rx, ry, rz );
-			mesh.scale.set( s, s, s );
 			scene.add( mesh );
+			mesh.scale.set( s, s, s );
 			
+			numSquares = numSquares+1;
 			
 			// line
 			//var geometry = shape.createPointsGeometry();
@@ -231,6 +235,13 @@
 			//check if we are at the end of the program
 			if(frameNum >= endFrame)
 			{
+				
+				if( extendGraph() )
+				{
+					endFrame += 100
+				}				
+				else
+				{
 				 //if( calcFrame > 18)
 				 //{
 					// failNum = numSquares;
@@ -242,6 +253,7 @@
 					//printData();
 					createGraph();
 				 //}
+				 }
 			}	
 			
 			
@@ -250,21 +262,26 @@
 			
 			var i;
 			
-			//add a square every third frame
-			if(frameNum%2 == 0)
-			{
+			//add a square every X frame
+			//if(frameNum%2 == 0)
+			//{
 				//on the final frame, make the screen a set color so it's easy to read 
+				
+		
 				if(frameNum >= endFrame)
 				{
 					addShape( squareShape, '#6495ED', 150, 100, 0, 0, 0, 0, 1 );
 				}
 				else	//random color square
 				{
-					addShape( squareShape, '#'+Math.floor(Math.random()*16777215).toString(16), 150, 100, 0, 0, 0, 0, 1 );
+					for(i = 0; i < addSpeed; i++)
+					{
+						addShape( squareShape, '#'+Math.floor(Math.random()*16777215).toString(16), 150, 100, -20, 0, 0, 0, 1 );
+					}
 				}
+				//function addShape( shape, color, x, y, z, rx, ry, rz, s )
 				
-				numSquares = numSquares+1;
-			}
+			//}
 			
 			renderer.render( scene, camera );
 			
@@ -273,6 +290,45 @@
 			
 			
 		}
+		
+		//
+		function extendGraph()
+		{
+			var i;
+			var frameAvg = 0;
+			
+			for(i = frameNum; i > frameNum-5; i--)
+			{
+				
+				frameAvg += frameTime[i];
+			}
+			
+			console.log(frameAvg);
+			console.log(i, frameNum);
+			
+			frameAvg = frameAvg / (frameNum-i);
+			
+			console.log(frameAvg);
+			
+			if(frameAvg < 20)
+			{
+				addSpeed = 3;
+			}
+			else if(frameAvg < 35)
+			{
+				addSpeed = 2;
+			}
+			else if(frameAvg < 50)
+			{
+				addSpeed = 1;
+			}
+			
+			if(frameAvg <= 50)
+				return true;
+			else
+				return false;
+		}
+		
 		
 		//protects the data from going out of the graph, and remove the bad data
 		function fixData()
