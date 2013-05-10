@@ -418,12 +418,12 @@
 				  .attr("transform", "translate(200, 440)")
 				  .attr("x", 6)
 				  .attr("dx", ".71em")
-				  .text("Frame Number");
+				  .text("Frame Number")
 			
   			// add lines
   			// do this AFTER the axes above so that the line is above the tick-lines
     		graph.append("svg:path").attr("d", line1(frameTime)).attr("class", "data1");
-    		//graph.append("svg:path").attr("d", line2(runArrays[1])).attr("class", "data1");
+    		graph.append("svg:path").attr("d", line2(runArrays[1])).attr("class", "data1");
 		}
 		
 		</script>
