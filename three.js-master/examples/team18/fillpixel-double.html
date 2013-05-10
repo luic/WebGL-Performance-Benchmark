@@ -78,11 +78,6 @@
 		
 		<script>
 		
-		
-		var targetFPS = 50;						//highest fps before adding objects
-		var varyFPS = targetFPS / 10;			//allowed range of FPS
-		var	lowestFPS = targetFPS - varyFPS;	//lowest FPS before taking out objects
-		
 		var startVal = 50;						//starting object number
 		
 		var removeNum = startVal;				//mesh array position, for removing objects
@@ -91,18 +86,10 @@
 		var scene = new THREE.Scene();
 		var geometry, material, material2;
 		
-		var addFlag = 0;						// -1 = remove, 1 = add, 0 = nothing
 		var waitFrames = 60;					// wait time between adding/removing objects
-		var waitTime = 0;						// amount of frames to wait
 		
 		var windowHalfX = window.innerWidth / 2;
 		var windowHalfY = window.innerHeight / 2;
-
-		var targetRotation = 0;
-		var targetRotationOnMouseDown = 0;
-
-		var mouseX = 0;
-		var mouseXOnMouseDown = 0;
 		
 		var timeframe = 0;
 		var calcFrame = 0;
@@ -130,9 +117,6 @@
 		runArrays[1] = new Array(endFrame - badData);
 		
 		var inc = 0;			//used for moving the next object in the other objects
-		
-		//frameNumSquares[0] = 0;
-		//frameTime[0] = 0;
 		
 		// Square shape
 		var sqLength = 80;
@@ -207,17 +191,6 @@
 			mesh.rotation.set( rx, ry, rz );
 			mesh.scale.set( s, s, s );
 			scene.add( mesh );
-			
-			
-			// line
-			//var geometry = shape.createPointsGeometry();
-			//var material = new THREE.LineBasicMaterial( { linewidth: 10, color: 0x333333, transparent: true } );
-
-			// var line = new THREE.Line( geometry, material );
-			// line.position.set( x, y, z );
-			// line.rotation.set( rx, ry, rz );
-			// line.scale.set( s, s, s );
-			// scene.add( line );
 		}
 		
 		
@@ -315,10 +288,6 @@
 		function fixData(frameData)
 		{
 			var i;
-			
-			//console.log(frameData);
-			//replace the frametime array with an array without the first X values
-			//frameData = frameData.slice(badData, endFrame);
 			
 			for(i = 0; i < endFrame; i++)
 			{
@@ -449,12 +418,12 @@
 				  .attr("transform", "translate(200, 440)")
 				  .attr("x", 6)
 				  .attr("dx", ".71em")
-				  .text("Frame Number");
+				  .text("Frame Number")
 			
   			// add lines
   			// do this AFTER the axes above so that the line is above the tick-lines
     		graph.append("svg:path").attr("d", line1(frameTime)).attr("class", "data1");
-    		//graph.append("svg:path").attr("d", line2(runArrays[1])).attr("class", "data1");
+    		graph.append("svg:path").attr("d", line2(runArrays[1])).attr("class", "data1");
 		}
 		
 		</script>
