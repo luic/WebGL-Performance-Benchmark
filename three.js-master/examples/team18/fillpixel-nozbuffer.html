@@ -62,6 +62,19 @@
 				font-size: 12px;
 			}
 			
+			div.tooltip {
+				position: absolute;
+				text-align: center;
+				width: 60px;
+				height: 12px;
+				padding: 8px;
+				font: 10px sans-serif;
+				background: #ddd;
+				border: solid 1px #aaa;
+				border-radius: 8px;
+				pointer-events: none;
+			}
+			
 		</style>
 	</head>
 	<body  style="overflow:auto;">
@@ -72,69 +85,74 @@
 		<script src="../../test/benchmark/benchmark-1.0.0.js"></script>
 		<script src="d3.v3/d3.v3.js"></script>
 		
-		<text id="TITLE" style="position: absolute; top:100px">Fill Pixel Z-Buffering [DISABLED]</text>
+		<text id="TITLE" style="position: absolute; top:100px; left:10px">Fill Pixel Z-Buffering [DISABLED]</text>
+		
+		<text id="RUNNING" style="position: absolute; top:200px; left:50px">Running test</text>
 		
 		<div id="graph" class="aGraph" style="position:absolute;top:0px;left:0; float:left;"></div>
 		
 		<script>
 		
 		
-		var targetFPS = 50;						//highest fps before adding objects
-		var varyFPS = targetFPS / 10;			//allowed range of FPS
-		var	lowestFPS = targetFPS - varyFPS;	//lowest FPS before taking out objects
+		//var targetFPS = 50;						//highest fps before adding objects
+		//var varyFPS = targetFPS / 10;			//allowed range of FPS
+		//var	lowestFPS = targetFPS - varyFPS;	//lowest FPS before taking out objects
 		
-		var startVal = 50;						//starting object number
+		//var startVal = 50;						//starting object number
 		
-		var removeNum = startVal;				//mesh array position, for removing objects
+		//var removeNum = startVal;				//mesh array position, for removing objects
 		var container, stats;
 		var camera, renderer;
 		var scene = new THREE.Scene();
-		var geometry, material, material2;
+		var geometry, material;
 		
-		var addFlag = 0;						// -1 = remove, 1 = add, 0 = nothing
-		var waitFrames = 60;					// wait time between adding/removing objects
-		var waitTime = 0;						// amount of frames to wait
+		//var addFlag = 0;						// -1 = remove, 1 = add, 0 = nothing
+		//var waitFrames = 60;					// wait time between adding/removing objects
+		//var waitTime = 0;						// amount of frames to wait
 		
-		var windowHalfX = window.innerWidth / 2;
-		var windowHalfY = window.innerHeight / 2;
+		//var windowHalfX = window.innerWidth / 2;
+		//var windowHalfY = window.innerHeight / 2;
 
-		var targetRotation = 0;
-		var targetRotationOnMouseDown = 0;
+		//var targetRotation = 0;
+		//var targetRotationOnMouseDown = 0;
 
-		var mouseX = 0;
-		var mouseXOnMouseDown = 0;
+		//var mouseX = 0;
+		//var mouseXOnMouseDown = 0;
 		
 		var timeframe = 0;
 		var calcFrame = 0;
 		
 		var frameNum = 0;
-		var endFrame = 250;
+		var endFrame = 100;
 		
-		var badData = 10;
+		var badData = 10;			//the # of data points we truncate from the beginning of the data to cut out bad data
 		
-		var numSquares = 0;
-		var failNum = 0;
+		var numSquares = 0;			//keeps track of number of squares in the scene
+		//var failNum = 0;
 		
-		var maxYaxis = 100;
+		var maxYaxis = 100;			//max render time (ms) shown on the graph
 		
-		var request;
+		var requestAnim;		//holds the animation frame request
 		
 		var frameNumSquares = new Array(endFrame - badData);
 		var frameTime = new Array(endFrame - badData);
 		
-		var inc = 0.1;			//used for moving the next object in the other objects
+		var inc = 0.1;			//used in AddShape() for moving future objects
 		
 		var addSpeed = 1;
+		
+		var runText = document.getElementById('RUNNING');
+		var textPeriods = 0;
 		
 		//frameNumSquares[0] = 0;
 		//frameTime[0] = 0;
 		
 		// Square shape
 		var sqLength = 80;
-		var x = 5000; //window.innerWidth;
-		var y = 5000; //window.innerHeight;
+		var x = 5000;	 //window.innerWidth;
+		var y = 5000; 	 //window.innerHeight;
 		var squareShape = new THREE.Shape();
-		squareShape.moveTo( 0,0 );
+		squareShape.moveTo( 0, 0 );
 		squareShape.lineTo( 0, y );
 		squareShape.lineTo( x, y );
 		squareShape.lineTo( x, 0 );
@@ -145,7 +163,6 @@
 		//Check that browser supports WebGL, else exit nicely
 		 if (Detector.webgl) {
 			 init();
-			 //console.log("begin animate");
 			 animate();
 		 } else {	
 			 var warning = Detector.getWebGLErrorMessage();
@@ -165,63 +182,61 @@
 			camera.position.z = 1000;
 			camera.position.set( 2500, 2500, 500 );
 
-			//renderer = new THREE.CanvasRenderer();
 			renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			renderer.sortObjects = false;
 			renderer.sortElements = false;
 			container.appendChild( renderer.domElement );
 			
-			//Disable Z-Buffering
+			//set false to disable Z-Buffering
 			renderer.setDepthTest(false);
 			
 			//add stats
 			stats = new Stats();
 			
-			//older way to add statistics object
+			//add statistics object
 			stats.getDomElement().style.position = 'absolute';
 			stats.getDomElement().style.left = '0px';
 			stats.getDomElement().style.top = '0px';
 			document.body.appendChild( stats.getDomElement() );
-
-			// new way to do add statistics object
-			//stats.domElement.style.position = 'absolute';
-			//stats.domElement.style.top = '0px';
-			//container.appendChild( stats.domElement );
 		}
 
+		
 		function addShape( shape, color, x, y, z, rx, ry, rz, s ) 
 		{
-
 			// flat shape
 			var geometry = new THREE.ShapeGeometry( shape );
 			var material = new THREE.MeshBasicMaterial( { color: color, overdraw: true } );
 
 			var mesh = new THREE.Mesh( geometry, material );
-			mesh.position.set( x, y, z + (frameNum*inc) );		//move the next object closer to the camera
-			//mesh.position.set( x, y, z );		//move the next object closer to the camera
+			mesh.position.set( x, y, z + (frameNum*inc) );		//move each new object closer to the camera
 			mesh.rotation.set( rx, ry, rz );
 			scene.add( mesh );
 			mesh.scale.set( s, s, s );
 			
 			numSquares = numSquares+1;
-			
-			// line
-			//var geometry = shape.createPointsGeometry();
-			//var material = new THREE.LineBasicMaterial( { linewidth: 10, color: 0x333333, transparent: true } );
-
-			// var line = new THREE.Line( geometry, material );
-			// line.position.set( x, y, z );
-			// line.rotation.set( rx, ry, rz );
-			// line.scale.set( s, s, s );
-			// scene.add( line );
 		}
 		
 		
 		function animate() 
 		{
+			//creation of the dynamic 'Running test' text
+			if(frameNum % 10 == 0)
+			{
+				if(textPeriods >= 5)
+				{
+					runText.innerHTML = "Running Test"
+					textPeriods = 0;
+				}
+				else
+				{
+					runText.innerHTML = runText.innerHTML + ".";
+					textPeriods = textPeriods + 1;
+				}
+			}
+		
 			// note: three.js includes requestAnimationFrame shim
-			request = requestAnimationFrame( animate );
+			requestAnim = requestAnimationFrame( animate );
 			
 			//record the time between each frame
 			frameNum = frameNum+1;
@@ -236,24 +251,20 @@
 			if(frameNum >= endFrame)
 			{
 				
-				if( extendGraph() )
+				if( extendGraph() )		//extend length of benchmark
 				{
-					endFrame += 100
+					endFrame += 120
 				}				
-				else
+				else	//benchmark complete
 				{
-				 //if( calcFrame > 18)
-				 //{
-					// failNum = numSquares;
-					// console.log("Num Squares at Fail: ", failNum);
-					cancelAnimationFrame(request);
+					runText.style.visibility = 'hidden';
+					cancelAnimationFrame(requestAnim);
 					removeSceneObjects();
 					fixData();
 					smoothData();
 					//printData();
 					createGraph();
-				 //}
-				 }
+				}
 			}	
 			
 			
@@ -303,12 +314,10 @@
 				frameAvg += frameTime[i];
 			}
 			
-			console.log(frameAvg);
-			console.log(i, frameNum);
-			
 			frameAvg = frameAvg / (frameNum-i);
 			
-			console.log(frameAvg);
+			//console.log("frameAvg: ", frameAvg);
+			
 			
 			if(frameAvg < 20)
 			{
@@ -323,7 +332,7 @@
 				addSpeed = 1;
 			}
 			
-			if(frameAvg <= 50)
+			if(frameAvg <= 40)
 				return true;
 			else
 				return false;
@@ -399,6 +408,8 @@
 			var x = d3.scale.linear().domain([0, endFrame]).range([0, w]);
 			var y = d3.scale.linear().domain([maxYaxis, 0]).range([0, h]);
 			
+	
+			
 			// create a line function that can convert data[] into x and y points
 			var line1 = d3.svg.line()
 			// assign the X function to plot our line as we wish
@@ -439,22 +450,25 @@
 			      .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
 
 			// create yAxis
-			var xAxis = d3.svg.axis().scale(x).tickSize(-h).tickSubdivide(1);
+			var xAxis = d3.svg.axis().scale(x).tickSize(-h).tickSubdivide(1).orient("bottom");
 
 			// Add the x-axis.
 			graph.append("svg:g")
 			      .attr("class", "x axis")
 			      .attr("transform", "translate(0," + h + ")")
+				  .on("mouseover", mouseover)
+				.on("mousemove", mousemove)
+				.on("mouseout", mouseout)
 			      .call(xAxis);
-
 
 			// create left yAxis
 			var yAxisLeft = d3.svg.axis().scale(y).ticks(6).orient("left");
 			// Add the y-axis to the left
 			graph.append("svg:g")
-			      .attr("class", "y axis")
-			      .attr("transform", "translate(-10,0)")
-			      .call(yAxisLeft);
+				.attr("class", "y axis")
+				.attr("transform", "translate(-10,0)")
+				.call(yAxisLeft);
+				//.data(data)
 				  
 			graph.append("text")
 				  .attr("transform", "translate(-75, 250) rotate(-90)")
@@ -467,6 +481,29 @@
 				  .attr("x", 6)
 				  .attr("dx", ".71em")
 				  .text("Frame Number");
+			
+			var div = d3.select("body").append("div")
+				.attr("class", "tooltip")
+				.style("opacity", 1e-6);
+				  
+			function mouseover() {
+			  div.transition()
+				  .duration(500)
+				  .style("opacity", 1);
+			}
+
+			function mousemove() {
+			  //div.text(d3.event.pageX + ", " + d3.event.pageY)
+			  div.text("Number of Objects")
+				  .style("left", (d3.event.pageX - 34) + "px")
+				  .style("top", (d3.event.pageY - 12) + "px");
+			}
+
+			function mouseout() {
+			  div.transition()
+				  .duration(500)
+				  .style("opacity", 1e-6);
+			}
 			
   			// add lines
   			// do this AFTER the axes above so that the line is above the tick-lines
