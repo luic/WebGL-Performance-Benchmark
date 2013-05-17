@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>Pixel Fill Rate Benchmark Z-Buffer [DISABLED]</title>
+		<title>Pixel Fill Rate Benchmark [Z-Buffering DISABLED]</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
@@ -85,29 +85,30 @@
 		<script src="../../test/benchmark/benchmark-1.0.0.js"></script>
 		<script src="d3.v3/d3.v3.js"></script>
 		
-		<text id="TITLE" style="position: absolute; top:100px; left:10px">Fill Pixel Z-Buffering [DISABLED]</text>
+		<text id="TITLE" style="position: absolute; top:100px; left:10px">Pixel Fill Rate Benchmark [Z-Buffering DISABLED]</text>
 		
 		<text id="RUNNING" style="position: absolute; top:200px; left:50px">Running test</text>
+		
+		<text id="FINISH" style="position: absolute; top:650px; left:50px"></text>
 		
 		<div id="graph" class="aGraph" style="position:absolute;top:0px;left:0; float:left;"></div>
 		
 		<script>
 		
+		//variables to create the scene, objects, camera
 		var container, stats;
 		var camera, renderer;
 		var scene = new THREE.Scene();
 		var geometry, material;
 		
-		var timeframe = 0;
-		var calcFrame = 0;
+		var timeframe = 0, calcFrame = 0;	//these are used for timing the scene renders
 		
-		var frameNum = 0;
-		var endFrame = 100;
+		var frameNum = 0;			//current frame number of the benchmark
+		var endFrame = 100;			//'end' of the benchmark, which is extended if more data is needed
 		
 		var badData = 10;			//the # of data points we truncate from the beginning of the data to cut out bad data
 		
 		var numSquares = 0;			//keeps track of number of squares in the scene
-		//var failNum = 0;
 		
 		var maxYaxis = 100;			//max render time (ms) shown on the graph
 		
@@ -116,15 +117,17 @@
 		var frameNumSquares = new Array(endFrame - badData);
 		var frameTime = new Array(endFrame - badData);
 		
-		var inc = 0.0;			//used in AddShape() for moving future objects
+		var inc = 0.1;			//used in AddShape() for moving future objects
 		
-		var addSpeed = 1;		//number of objects to add per frame
+		var addObjects = 1;		//number of objects to add per frame
 		
+		var finishText = document.getElementById('FINISH');
 		var runText = document.getElementById('RUNNING');
-		var textPeriods = 0;
+		var runTextCount = 0;
+		
+		var min, max, mean;
 		
 		// Square shape
-		var sqLength = 80;
 		var x = 5000;	 //window.innerWidth;
 		var y = 5000; 	 //window.innerHeight;
 		var squareShape = new THREE.Shape();
@@ -194,20 +197,23 @@
 		}
 		
 		
+		//This function: requests the next animation frame, records the render times, 
+		//checks for end of benchmark, adds more objects, updates stats.js, 
+		//renders the scene, and verifies that the rendering is finished before continuing.
 		function animate() 
 		{
 			//creation of the dynamic 'Running test' text
-			if(frameNum % 10 == 0)
+			if(frameNum % 5 == 0)	//update every 5 frames
 			{
-				if(textPeriods >= 5)
+				if(runTextCount >= 5)
 				{
 					runText.innerHTML = "Running test"
-					textPeriods = 0;
+					runTextCount = 0;
 				}
 				else
 				{
 					runText.innerHTML = runText.innerHTML + ".";
-					textPeriods = textPeriods + 1;
+					runTextCount = runTextCount + 1;
 				}
 			}
 		
@@ -235,33 +241,38 @@
 				{
 					runText.style.visibility = 'hidden';
 					cancelAnimationFrame(requestAnim);
-					printData();
+					//printData();
 					removeSceneObjects();
+					
 					fixData();
+					calcStats();
 					smoothData();
-					printData();
+					//printData();
+					
 					createGraph();
+					finishText.innerHTML = "<b>---Results---</b>"
+											+"<br>Total Frames rendered: " +frameNum 
+											+"<br>Objects in final frame: " +numSquares 
+											+"<br>Final frame render time: " +frameTime[frameNum] 
+											+"<br><br>"
+											+"<b>---Render Time Data---</b>"
+											+"<br>Mininum: " +min 
+											+"<br>Maximum: " +max 
+											+"<br>Average: " +mean;
+					
+					addShape( squareShape, '#6495ED', 150, 100, 0, 0, 0, 0, 1 );
 				}
-			}	
-			
-			
-			//fps meter update
-			stats.update();
-			
-			//add more objects
-			if(frameNum < endFrame)
+			}
+			else	//keep adding more objects
 			{
 				var i;
-				for(i = 0; i < addSpeed; i++)
+				for(i = 0; i < addObjects; i++)
 				{
 					addShape( squareShape, '#'+Math.floor(Math.random()*16777215).toString(16), 150, 100, -20, 0, 0, 0, 1 );
 				}
 			}
-			else
-			{
-				//on the final frame, make the screen a set color so it's easy to read 
-				addShape( squareShape, '#6495ED', 150, 100, 0, 0, 0, 0, 1 );
-			}
+			
+			stats.update();
 				
 			renderer.render( scene, camera );
 			
@@ -283,29 +294,53 @@
 			}
 			frameAvg = frameAvg / (frameNum-i);
 			
-			console.log("frameAvg: ", frameAvg);
+			//console.log("frameAvg: ", frameAvg);
 			
 			//as the average render time goes up, add objects at a slower rate
 			if(frameAvg < 20)
 			{
-				addSpeed = 8;
+				addObjects = 8;
 			}
 			else if(frameAvg < 35)
 			{
-				addSpeed = 4;
+				addObjects = 4;
 			}
 			else if(frameAvg < 50)
 			{
-				addSpeed = 2;
+				addObjects = 2;
 			}
 			
-			//if the average render time is under the limit, continue
+			//if the average render time is under the limit, continue benchmarking
 			if(frameAvg <= 50)
 				return true;
-			else	//ends the benchmark
+			else	//time to end the benchmark
 				return false;
 		}
 		
+		
+		//calculate stats for the results at the end
+		function calcStats()
+		{
+			var i, sum = 0;
+			for(i = 0; i < frameTime.length; i++)
+			{
+				//new minimum
+				if(frameTime[i] < min || !min)	
+				{
+					min = frameTime[i];
+				}
+				
+				//new maximum
+				if(frameTime[i] > max || !max)
+				{
+					max = frameTime[i];
+				}
+				
+				sum = sum + frameTime[i];
+			}
+			
+			mean = sum/i;
+		}
 		
 		//protects the data from going out of the graph, and remove the bad data
 		function fixData()
@@ -315,6 +350,7 @@
 			//replace original arrays with the identical array without the first 10 values
 			frameTime = frameTime.slice(badData, endFrame+1);
 			frameNumSquares = frameNumSquares.slice(badData, endFrame+1);
+			frameNum = frameNum - badData;
 			
 			//keep the graph data from shooting off of the graph when there are outliers
 			for(i = 1; i < endFrame; i++)
@@ -382,8 +418,6 @@
 			var x = d3.scale.linear().domain([0, endFrame]).range([0, w]);
 			var y = d3.scale.linear().domain([maxYaxis, 0]).range([0, h]);
 			
-	
-			
 			// create a line function that can convert data[] into x and y points
 			var line1 = d3.svg.line()
 			// assign the X function to plot our line as we wish
@@ -428,12 +462,12 @@
 
 			// Add the x-axis.
 			graph.append("svg:g")
-			      .attr("class", "x axis")
-			      .attr("transform", "translate(0," + h + ")")
-				  .on("mouseover", mouseover)
+			    .attr("class", "x axis")
+			    .attr("transform", "translate(0," + h + ")")
+				.on("mouseover", mouseover)
 				.on("mousemove", mousemove)
 				.on("mouseout", mouseout)
-			      .call(xAxis);
+			    .call(xAxis);
 
 			// create left yAxis
 			var yAxisLeft = d3.svg.axis().scale(y).ticks(6).orient("left");
@@ -442,7 +476,6 @@
 				.attr("class", "y axis")
 				.attr("transform", "translate(-10,0)")
 				.call(yAxisLeft);
-				//.data(data)
 				  
 			graph.append("text")
 				  .attr("transform", "translate(-75, 250) rotate(-90)")
@@ -479,6 +512,7 @@
 				  .style("opacity", 1e-6);
 			}
 			
+					
   			// add lines (do this AFTER the axes above so that the line is above the tick-lines)
     		graph.append("svg:path").attr("d", line1(frameTime)).attr("class", "data1");
     		//graph.append("svg:path").attr("d", line2(data)).attr("class", "data2");
