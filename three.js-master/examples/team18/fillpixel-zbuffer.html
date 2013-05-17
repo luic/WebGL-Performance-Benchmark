@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>Pixel Fill Rate Benchmark [Z-Buffering DISABLED]</title>
+		<title>Pixel Fill Rate Benchmark [Z-Buffering ENABLED]</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
@@ -115,7 +115,7 @@
 		<script src="d3.v3/d3.v3.js"></script>
 		<script src="d3.tip.min.js"></script>
 		
-		<text id="TITLE" style="position: absolute; top:100px; left:10px">Pixel Fill Rate Benchmark [Z-Buffering DISABLED]</text>
+		<text id="TITLE" style="position: absolute; top:100px; left:10px">Pixel Fill Rate Benchmark [Z-Buffering ENABLED]</text>
 		
 		<text id="RUNNING" style="position: absolute; top:200px; left:50px">Running test</text>
 		
@@ -201,7 +201,7 @@
 			container.appendChild( renderer.domElement );
 			
 			//set false to disable Z-Buffering
-			renderer.setDepthTest(false);
+			renderer.setDepthTest(true);
 			
 			//add stats
 			stats = new Stats();
