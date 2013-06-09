@@ -1,0 +1,439 @@
+<!-- 
+	This file was meant to be similar to the fillpixel tests, but would 
+	contain both z-buffering and non z-buffering tests into one page,
+	and would graph both on a single graph in the final page.
+	
+	THIS IS UNFINISHED, AND IS EXPERIMENTAL.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Pixel Fill Rate Benchmark Z-Buffer [DISABLED]</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			#container {
+				background: #6495ED;
+				background-color: #6495ED; 
+			}
+			
+			body {
+				font-family: Monospace;
+				<!--background: #000; -->
+				background: #f0f0f0; 
+				background-color: #6495ED; 
+				margin: 0px;
+				overflow: hidden;
+			}
+			
+			/* tell the SVG path to be a thin blue line without any area fill */
+			path {
+				stroke-width: 1;
+				fill: none;
+			}
+			
+			.data1 {
+				stroke: black;
+			}
+
+			.data2 {
+				stroke: orange;
+			}
+			
+			.axis {
+			  shape-rendering: crispEdges;
+			}
+
+			.x.axis line {
+			  stroke: lightgrey;
+			}
+
+			.x.axis .minor {
+			  stroke-opacity: .5;
+			}
+
+			.x.axis path {
+			  display: none;
+			}
+			
+			.x.axis text {
+				font-size: 10px;
+			}
+
+			.y.axis line, .y.axis path {
+			  fill: none;
+			  stroke: #000;
+			}
+			
+			.y.axis text {
+				font-size: 12px;
+			}
+			
+		</style>
+	</head>
+	<body  style="overflow:auto;">
+
+		<script src="../../build/three.min.js"></script>
+		<script src="../js/Detector.js"></script>
+		<script src="stats.js-r9/src/Stats.js"></script>
+		<script src="../../test/benchmark/benchmark-1.0.0.js"></script>
+		<script src="d3.v3/d3.v3.js"></script>
+		
+		<text id="TITLE" style="position: absolute; top:100px">Fill Pixel Z-Buffering [DISABLED]</text>
+		
+		<div id="graph" class="aGraph" style="position:absolute;top:0px;left:0; float:left;"></div>
+		
+		<script>
+		
+		var startVal = 50;						//starting object number
+		
+		var removeNum = startVal;				//mesh array position, for removing objects
+		var container, stats;
+		var camera, renderer;
+		var scene = new THREE.Scene();
+		var geometry, material, material2;
+		
+		var waitFrames = 60;					// wait time between adding/removing objects
+		
+		var windowHalfX = window.innerWidth / 2;
+		var windowHalfY = window.innerHeight / 2;
+		
+		var timeframe = 0;
+		var calcFrame = 0;
+		
+		var frameNum = 0;
+		var endFrame = 130;
+		
+		var badData = 10;
+		
+		var numSquares = 1;
+		
+		var maxYaxis = 100;
+		
+		var request;
+		
+		var frameNumSquares = new Array(endFrame - badData);
+		var frameTime = new Array(endFrame - badData);
+		
+		var runData1 = new Array(endFrame - badData);
+		var runData2 = new Array(endFrame - badData);
+		var runs = 0;
+		
+		var runArrays = new Array(2);
+		runArrays[0] = new Array(endFrame - badData);
+		runArrays[1] = new Array(endFrame - badData);
+		
+		var inc = 0;			//used for moving the next object in the other objects
+		
+		// Square shape
+		var sqLength = 80;
+		var x = 5000; //window.innerWidth;
+		var y = 5000; //window.innerHeight;
+		var squareShape = new THREE.Shape();
+		squareShape.moveTo( 0,0 );
+		squareShape.lineTo( 0, y );
+		squareShape.lineTo( x, y );
+		squareShape.lineTo( x, 0 );
+		squareShape.lineTo( 0, 0 );
+		
+		var prevMaterial, prevMesh;
+		
+		//Check that browser supports WebGL, else exit nicely
+		 if (Detector.webgl) {
+			 init();
+			 //console.log("begin animate");
+			 animate();
+		 } else {	
+			 var warning = Detector.getWebGLErrorMessage();
+			 document.getElementById('container').appendChild(warning);
+		 }   
+
+		function init() 
+		{
+			container = document.createElement( 'div' );
+			document.body.appendChild( container );
+			
+			// camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 1000 );
+			// camera.position.set( 0, 150, 500 );
+		
+			camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.y = window.innerHeight / 2;
+			camera.position.z = 1000;
+			camera.position.set( 2500, 2500, 500 );
+
+			//renderer = new THREE.CanvasRenderer();
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.sortObjects = false;
+			renderer.sortElements = false;
+			container.appendChild( renderer.domElement );
+			
+			//Disable Z-Buffering
+			renderer.setDepthTest(false);
+			
+			//add stats
+			stats = new Stats();
+			
+			//older way to add statistics object
+			stats.getDomElement().style.position = 'absolute';
+			stats.getDomElement().style.left = '0px';
+			stats.getDomElement().style.top = '0px';
+			document.body.appendChild( stats.getDomElement() );
+
+			// new way to do add statistics object
+			//stats.domElement.style.position = 'absolute';
+			//stats.domElement.style.top = '0px';
+			//container.appendChild( stats.domElement );
+		}
+
+		function addShape( shape, color, x, y, z, rx, ry, rz, s ) 
+		{
+
+			// flat shape
+			var geometry = new THREE.ShapeGeometry( shape );
+			var material = new THREE.MeshBasicMaterial( { color: color, overdraw: true } );
+
+			var mesh = new THREE.Mesh( geometry, material );
+			mesh.position.set( x, y, z + (inc++) );		//move the next object closer to the camera
+			mesh.rotation.set( rx, ry, rz );
+			mesh.scale.set( s, s, s );
+			scene.add( mesh );
+		}
+		
+		
+		function animate() 
+		{
+			// note: three.js includes requestAnimationFrame shim
+			request = requestAnimationFrame( animate );
+			
+			//record the time between each frame
+			frameNum = frameNum+1;
+			calcFrame = performance.now() - timeframe;
+			//console.log("time between: ", calcFrame);
+			timeframe = performance.now();
+			
+			frameNumSquares[frameNum] = numSquares;
+			frameTime[frameNum] = calcFrame;
+			
+			//check if we are at the end of the program
+			if(frameNum >= endFrame)
+			{
+				console.log("runs: ", runs);
+				
+				if(runs >= 1)
+				{
+					cancelAnimationFrame(request);
+					runData2 = frameTime.slice();
+					runArrays[1] = runData2.slice();
+					createGraph();
+					
+					// console.log("RUN DATA 2");
+					// var i;
+					// for(i = 1; i < endFrame; i++)
+					// {
+						// console.log(runData2[i]);
+					// }
+				}
+				else if(runs == 0)
+				{
+					runData1 = frameTime.slice();
+					runArrays[0] = runData1.slice();
+				}
+				
+				removeSceneObjects();
+				numSquares = 1;
+				
+				var i;
+				for(i = 1; i < endFrame; i++)
+				{
+					console.log(runArrays[0][i]);
+				}
+				
+				fixData(runArrays[runs]);
+				smoothData(runArrays[runs]);
+				//printData(runArrays[runs]);
+				
+				runs++;
+				
+				//clean out variables for the next run
+				timeframe = 0;
+				calcFrame = 0;
+				frameNum = 0;
+			}	
+			
+			
+			//fps meter update
+			stats.update();
+			
+			var i;
+			
+			//add a square every third frame
+			if(frameNum%2 == 0)
+			{
+				//on the final frame, make the screen a set color so it's easy to read 
+				if(frameNum >= endFrame)
+				{
+					addShape( squareShape, '#6495ED', 150, 100, 0, 0, 0, 0, 1 );
+				}
+				else	//random color square
+				{
+					addShape( squareShape, '#'+Math.floor(Math.random()*16777215).toString(16), 150, 100, 0, 0, 0, 0, 1 );
+				}
+				
+				numSquares = numSquares+1;
+			}
+			
+			renderer.render( scene, camera );
+			
+			//ensure renderer is finished before moving on to the next frame
+			renderer.context.finish();
+			
+			
+		}
+		
+		//protects the data from going out of the graph, and remove the bad data
+		function fixData(frameData)
+		{
+			var i;
+			
+			for(i = 0; i < endFrame; i++)
+			{
+				if (frameData[i] > maxYaxis)
+				{
+					frameData[i] = maxYaxis;
+				}
+			}
+		}
+		
+		//smooth the data on the graph in order to see the trend
+		function smoothData(frameData)
+		{
+			var i;
+			
+			for(i = 3; i < endFrame; i++)
+			{
+				if(frameData[i] >= (2* frameData[i-1]) )
+				{
+					frameData[i] = ( (frameData[i] + frameData[i-1] + frameData[i-2]) / 3);
+				}
+			}
+		}
+		
+		//remove all objects from the scene
+		function removeSceneObjects()
+		{
+			var obj, i;
+			//console.log("scene.children.length: ", scene.children.length);
+			for ( i = scene.children.length - 1; i >= 0 ; i -- ) 
+			{
+				obj = scene.children[i];
+				if (obj !== camera) 
+				{
+					scene.remove(obj);	
+				}
+			}
+			//console.log("scene.children.length: ", scene.children.length);
+		}
+		
+		//debug function to print out the recorded data
+		function printData(frameData) 
+		{
+			var i;
+			for(i = 1; i < frameNumSquares.length; i++)
+			{
+				console.log("\nFrame number: ", i);
+				console.log("Number of squares: ", frameNumSquares[i] );
+				console.log("Draw time: ", frameData[i]);
+			}
+		}
+		
+		//Creation of the d3.js line graph
+		function createGraph() 
+		{
+			// define dimensions of graph
+			var m = [160, 80, 80, 80]; // margins
+			var w = (1000 - m[1] - m[3]);	// width
+			var h = 400; // height
+			
+			var x = d3.scale.linear().domain([0, endFrame]).range([0, w]);
+			var y = d3.scale.linear().domain([maxYaxis, 0]).range([0, h]);
+			
+			// create a line function that can convert data[] into x and y points
+			var line1 = d3.svg.line()
+			// assign the X function to plot our line as we wish
+			.x(function(d,i) { 
+				// verbose logging to show what's actually being done
+				//console.log('Plotting X value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
+				// return the X coordinate where we want to plot this datapoint
+				return x(i); 
+			})
+			.y(function(d) { 
+				// verbose logging to show what's actually being done
+				//console.log('Plotting Y value for data point: ' + d + ' to be at: ' + y(d) + " using our yScale.");
+				// return the Y coordinate where we want to plot this datapoint
+				return y(d); // use the 1st index of data (for example, get 20 from [20,13])
+			})
+			
+			 var line2 = d3.svg.line()
+				// // assign the X function to plot our line as we wish
+				 .x(function(d,i) { 
+					// // verbose logging to show what's actually being done
+					// //console.log('Plotting X value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
+					// // return the X coordinate where we want to plot this datapoint
+					// return x(startTime.getTime() + (timeStep*i)); 
+				 })
+				 .y(function(d) { 
+					// // verbose logging to show what's actually being done
+					// //console.log('Plotting Y value for data point: ' + d + ' to be at: ' + y(d) + " using our yScale.");
+					// // return the Y coordinate where we want to plot this datapoint
+					// return y(d[1]); // use the 2nd index of data (for example, get 13 from [20,13])
+				 })
+
+
+			// Add an SVG element with the desired dimensions and margin.
+			var graph = d3.select("#graph").append("svg:svg")
+			      .attr("width", w + m[1] + m[3])
+			      .attr("height", h + m[0] + m[2])
+			    .append("svg:g")
+			      .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+
+			// create yAxis
+			var xAxis = d3.svg.axis().scale(x).tickSize(-h).tickSubdivide(1);
+
+			// Add the x-axis.
+			graph.append("svg:g")
+			      .attr("class", "x axis")
+			      .attr("transform", "translate(0," + h + ")")
+			      .call(xAxis);
+
+
+			// create left yAxis
+			var yAxisLeft = d3.svg.axis().scale(y).ticks(6).orient("left");
+			// Add the y-axis to the left
+			graph.append("svg:g")
+			      .attr("class", "y axis")
+			      .attr("transform", "translate(-10,0)")
+			      .call(yAxisLeft);
+				  
+			graph.append("text")
+				  .attr("transform", "translate(-75, 250) rotate(-90)")
+				  .attr("y", 6)
+				  .attr("dy", ".71em")
+				  .text("Render Time (ms)");
+				  
+			graph.append("text")
+				  .attr("transform", "translate(200, 440)")
+				  .attr("x", 6)
+				  .attr("dx", ".71em")
+				  .text("Frame Number")
+			
+  			// add lines
+  			// do this AFTER the axes above so that the line is above the tick-lines
+    		graph.append("svg:path").attr("d", line1(frameTime)).attr("class", "data1");
+    		graph.append("svg:path").attr("d", line2(runArrays[1])).attr("class", "data1");
+		}
+		
+		</script>
+	</body>
+</html>
