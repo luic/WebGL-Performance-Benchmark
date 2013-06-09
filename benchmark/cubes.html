@@ -21,9 +21,9 @@
 	<body>
 
 		<!-- included libraries -->
-		<script src="../../build/three.min.js"></script>
-		<script src="../js/Detector.js"></script>
-		<script src="stats.js-r9/src/Stats.js"></script>
+		<script src="../three.js.original/build/three.min.js"></script>
+		<script src="../three.js.original/examples/js/Detector.js"></script>
+		<script src="libraries/stats.js-r9/src/Stats.js"></script>
 
 		<!-- text objects -->
 		<text id="FPSTEXT_ID">Target FPS:</text>
@@ -97,7 +97,7 @@
 			for(var i = 0; i < meshes.length; i++)
 			{
 			
-				var compute = (Math.floor(Math.random()*4);
+				var compute = (Math.floor(Math.random()*4));
 				if( compute == 1)
 					meshes[i] = new THREE.Mesh( geometry, material1 );
 				else if(compute == 2)
