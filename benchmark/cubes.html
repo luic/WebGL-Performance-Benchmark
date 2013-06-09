@@ -39,23 +39,20 @@
 		
 		<script>
 
-		var numObjects = 2000;					//max objects
-		var targetFPS = 50;						//highest fps before adding objects
-		var varyFPS = targetFPS / 10;			//allowed range of FPS
-		var	lowestFPS = targetFPS - varyFPS;	//lowest FPS before taking out objects
-		
-		var startVal = 50;						//starting object number
-		
-		var removeNum = startVal;				//mesh array position, for removing objects
+		var numObjects = 2000;			//max objects
+		var targetFPS = 50;			//highest fps before adding objects
+		var varyFPS = targetFPS / 10;		//allowed range of FPS
+		var lowestFPS = targetFPS - varyFPS;	//lowest FPS before taking out objects
+		var startVal = 50;			//starting object number
+		var removeNum = startVal;		//mesh array position, for removing objects
 		var container, stats;
 		var camera, scene, renderer;
 		var geometry, material, material2;
-		//var geometries = new THREE.CubeGeometry(10);
 		var meshes = new Array(numObjects);
 		var colors = new Array(numObjects);
-		var addFlag = 0;						// -1 = remove, 1 = add, 0 = nothing
-		var waitFrames = 0;						// wait time between adding/removing objects
-		var waitTime = 10;						// amount of frames to wait
+		var addFlag = 0;			// -1 = remove, 1 = add, 0 = nothing
+		var waitFrames = 0;			// wait time between adding/removing objects
+		var waitTime = 10;			// amount of frames to wait
 		
 		
 		
@@ -97,27 +94,13 @@
 			material3 = new THREE.MeshBasicMaterial( { color: color3, wireframe: false } );
 			material4 = new THREE.MeshBasicMaterial( { color: color4, wireframe: false } );
 			
-			//THREE.MeshPhongMaterial
-			//THREE.MeshLambertMaterial
-			
-			for(var i = 0; i < numObjects; i++)
-			{
-				//material1 = new THREE.MeshBasicMaterial( { color: color[i], wireframe: true } );
-			}
-			
-			
 			geometry = new THREE.CubeGeometry( 200, 200, 200 );
 			geometry2 = new THREE.CubeGeometry( 200, 400, 200 );
-			// geometries[0] = new THREE.CubeGeometry( 200, 200, 200 );
-			// geometries[1] = new THREE.CubeGeometry( 200, 300, 200 );
-			
 
 			for(var i = 0; i < meshes.length; i++)
 			{
 			
-				var compute = (Math.floor(Math.random()*4));
-				//console.log("check compute: \n", compute);
-				
+				var compute = (Math.floor(Math.random()*4);
 				if( compute == 1)
 					meshes[i] = new THREE.Mesh( geometry, material1 );
 				else if(compute == 2)
@@ -154,9 +137,6 @@
 			pointLight.position.x = 10;
 			pointLight.position.y = 50;
 			pointLight.position.z = 130;
-
-			// add to the scene
-			//scene.add(pointLight);
 			
 			renderer = new THREE.CanvasRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
@@ -166,16 +146,11 @@
 			//add stats
 			stats = new Stats();
 			
-			//older way to add statistics object
+			//add statistics object
 			stats.getDomElement().style.position = 'absolute';
 			stats.getDomElement().style.left = '0px';
 			stats.getDomElement().style.top = '0px';
 			document.body.appendChild( stats.getDomElement() );
-
-			// new way to do add statistics object
-			//stats.domElement.style.position = 'absolute';
-			//stats.domElement.style.top = '0px';
-			//container.appendChild( stats.domElement );
 		}
 
 		function animate() 
@@ -202,7 +177,7 @@
 			// check if done waiting yet
 			if( waitFrames == 0 ) 
 			{
-				if( stats.getFps() < lowestFPS  )		// fps too low
+				if( stats.getFps() < lowestFPS  )	// fps too low
 				{
 					addFlag = -1;
 				}
@@ -217,11 +192,7 @@
 				
 				//debug
 				console.log("# Objects: ", removeNum);
-				//console.log("varyFPS: ", varyFPS);
-				//console.log("lowestfps: ", lowestFPS);
 
-				// Check if we need to add or remove objects from the scene
-				// in order to reach the targeted FPS
 				if(addFlag == -1)		//remove objects
 				{
 					scene.remove( meshes[removeNum--] );
@@ -266,28 +237,13 @@
 		
 		function fpsUpdate(value)
 		{
-			targetFPS = value;						//highest fps before adding objects
+			targetFPS = value;			//highest fps before adding objects
 			varyFPS = Math.ceil(targetFPS / 10);	//allowed range of FPS
-			lowestFPS = targetFPS - varyFPS;		//lowest FPS before taking out objects
+			lowestFPS = targetFPS - varyFPS;	//lowest FPS before taking out objects
 			
 			var TargetFPS = document.getElementById('FPSTEXT_ID');
 			TargetFPS.innerHTML = "Target FPS: " +lowestFPS +" - " +targetFPS;
 		}
-		
-		// $("#slider").slider({
-		  // slide: function(e) {
-			// $(this).val(); // Value each mouse move when sliding.
-			// console.log("slide");
-		  // },
-		  // change: function(e) {
-			// $(this).val(); // Value on slide end, or when changed programatically.
-			// console.log("change slide");
-		  // },
-		  // stop: function(e) {
-			// $(this).val(); // Value on slide end.
-			// console.log("stop slide");
-		  // }
-		// });
 		
 		</script>
 
