@@ -12,7 +12,6 @@
 			
 			body {
 				font-family: Monospace;
-				<!--background: #000; -->
 				background: #f0f0f0; 
 				background-color: #6495ED; 
 				margin: 0px;
@@ -108,21 +107,20 @@
 	</head>
 	<body  style="overflow:auto;">
 
-		<script src="../../build/three.min.js"></script>
-		<script src="../js/Detector.js"></script>
-		<script src="stats.js-r9/src/Stats.js"></script>
-		<script src="../../test/benchmark/benchmark-1.0.0.js"></script>
-		<script src="d3.v3/d3.v3.js"></script>
-		<script src="d3.tip.min.js"></script>
+		<!-- included libraries -->
+		<script src="../three.js.original/build/three.min.js"></script>
+		<script src="../three.js.original/examples/js/Detector.js"></script>
+		<script src="libraries/stats.js-r9/src/Stats.js"></script>
+		<script src="libraries/d3.v3/d3.v3.js"></script>
+		<script src="libraries/d3.tip.min.js"></script>
 		
+		<!-- text objects -->
 		<text id="TITLE" style="position: absolute; top:100px; left:10px">Pixel Fill Rate Benchmark [Z-Buffering DISABLED]</text>
-		
 		<text id="RUNNING" style="position: absolute; top:200px; left:50px">Running test</text>
-		
 		<text id="FINISH" style="position: absolute; top:650px; left:50px"></text>
-		
 		<text id="TIPNOTE" style="position: absolute; top:650px; left:550px"></text>
 		
+		<!-- graph object -->
 		<div id="graph" class="aGraph" style="position:absolute;top:0px;left:0; float:left;"></div>
 		
 		<script>
@@ -153,16 +151,19 @@
 		
 		var addObjects = 1;		//number of objects to add per frame
 		
+		//variables used to control and change the text
 		var finishText = document.getElementById('FINISH');
 		var tipText = document.getElementById('TIPNOTE');
 		var runText = document.getElementById('RUNNING');
 		var runTextCount = 0;
 		
-		var min, max, mean;
+		var min, max, mean;		//variables for statistics at the bottom fo the page
 		
-		// Square shape
-		var x = 5000;	 //window.innerWidth;
-		var y = 5000; 	 //window.innerHeight;
+		var gl; //used to access WebGL context (renderer.context)
+		
+		// Square shape objects
+		var x = 5000;
+		var y = 5000;
 		var squareShape = new THREE.Shape();
 		squareShape.moveTo( 0, 0 );
 		squareShape.lineTo( 0, y );
@@ -170,6 +171,7 @@
 		squareShape.lineTo( x, 0 );
 		squareShape.lineTo( 0, 0 );
 		
+		//-----------------------Code starts here-----------------------
 		
 		//Check if browser supports WebGL
 		 if (Detector.webgl) {
@@ -187,7 +189,7 @@
 			container = document.createElement( 'div' );
 			document.body.appendChild( container );
 		
-			
+			//setup camera
 			camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
 			camera.position.y = window.innerHeight / 2;
 			camera.position.z = 1000;
@@ -199,14 +201,18 @@
 			renderer.sortObjects = false;
 			renderer.sortElements = false;
 			container.appendChild( renderer.domElement );
+			gl = renderer.context;
 			
 			//set false to disable Z-Buffering
 			renderer.setDepthTest(false);
 			
+			// Testing other methods of changing depth test
+			//renderer.context.depthMask( false );
+			//gl.disable(gl.DEPTH_TEST);
+			//console.log(gl.getParameter(gl.DEPTH_TEST));
+			
 			//add stats
 			stats = new Stats();
-			
-			//add statistics object
 			stats.getDomElement().style.position = 'absolute';
 			stats.getDomElement().style.left = '0px';
 			stats.getDomElement().style.top = '0px';
@@ -218,7 +224,7 @@
 		function addShape( shape, color, x, y, z, rx, ry, rz, s ) 
 		{
 			var geometry = new THREE.ShapeGeometry( shape );
-			var material = new THREE.MeshBasicMaterial( { color: color, overdraw: true } );
+			var material = new THREE.MeshBasicMaterial( { color: color} );
 
 			var mesh = new THREE.Mesh( geometry, material );
 			mesh.position.set( x, y, z + (frameNum*inc) );		//move each new object closer to the camera
@@ -238,12 +244,12 @@
 			//creation of the dynamic 'Running test' text
 			if(frameNum % 5 == 0)	//update every 5 frames
 			{
-				if(runTextCount >= 10)
+				if(runTextCount >= 10)	//reset the text after 10 periods
 				{
 					runText.innerHTML = "Running test"
 					runTextCount = 0;
 				}
-				else
+				else	//add another period
 				{
 					runText.innerHTML = runText.innerHTML + ".";
 					runTextCount = runTextCount + 1;
@@ -256,7 +262,6 @@
 			//record the time between each frame
 			frameNum = frameNum+1;
 			calcFrame = performance.now() - timeframe;
-			//console.log("time between: ", calcFrame);
 			timeframe = performance.now();
 			
 			frameNumSquares[frameNum] = numSquares;
@@ -266,23 +271,24 @@
 			if(frameNum >= endFrame)
 			{
 				
-				if( extendGraph() )		//extend length of benchmark
+				if( extendGraph() )		//check if it needs to extend length of benchmark
 				{
 					endFrame += 60
 				}				
 				else	//benchmark is complete
 				{
+					//hide running text
 					runText.style.visibility = 'hidden';
-					cancelAnimationFrame(requestAnim);
-					//printData();
-					removeSceneObjects();
 					
+					//clean up and create graph
+					cancelAnimationFrame(requestAnim);
+					removeSceneObjects();
 					fixData();
 					calcStats();
 					smoothData();
-					//printData();
-					
 					createGraph();
+					
+					//resulting statistics message
 					finishText.innerHTML = "<b>---Results---</b>"
 											+"<br>Total Frames rendered: " +frameNum 
 											+"<br>Objects in final frame: " +numSquares 
@@ -295,6 +301,7 @@
 											
 					tipText.innerHTML = "<b>Note:</b> you can mouse over the line graph to see <br> data at any part of the benchmark.";
 					
+					//create the blue background color for the finished screen
 					addShape( squareShape, '#6495ED', 150, 100, 0, 0, 0, 0, 1 );
 				}
 			}
@@ -322,50 +329,40 @@
 			var i;
 			var frameAvg = 0;
 			
-			//get the average render time of the last 5 frames
-			for(i = frameNum; i > frameNum-5; i--)
+			if(frameNum > 5)
 			{
-				frameAvg += frameTime[i];
-			}
-			frameAvg = frameAvg / (frameNum-i);
-			
-			//console.log("frameAvg: ", frameAvg);
-			
-			//as the average render time goes up, add objects at a slower rate
-			if(frameAvg < 20)
-			{
-				addObjects = 8;
-			}
-			else if(frameAvg < 35)
-			{
-				addObjects = 4;
-			}
-			else if(frameAvg < 50)
-			{
-				addObjects = 2;
+				//get the average render time of the last 5 frames
+				for(i = frameNum; i > frameNum-5; i--)
+				{
+					frameAvg += frameTime[i];
+				}
+				
+				frameAvg = frameAvg / (frameNum-i);
 			}
 			
 			//if the average render time is under the limit, continue benchmarking
-			if(frameAvg <= 50)
+			if(frameAvg <= 55)
 				return true;
 			else	//time to end the benchmark
 				return false;
 		}
 		
 		
-		//calculate stats for the results at the end
+		//Calculate statistics for the results at the end. It takes the data
+		//from the frameTime array that was built during the benchmark.
 		function calcStats()
 		{
 			var i, sum = 0;
+			
 			for(i = 0; i < frameTime.length; i++)
 			{
-				//new minimum
+				//check for new minimum
 				if(frameTime[i] < min || !min)	
 				{
 					min = frameTime[i];
 				}
 				
-				//new maximum
+				//check for new maximum
 				if(frameTime[i] > max || !max)
 				{
 					max = frameTime[i];
@@ -377,12 +374,13 @@
 			mean = sum/i;
 		}
 		
-		//protects the data from going out of the graph, and remove the bad data
+		//Protects the data from going out of the graph, and remove bad data 
+		//from the beginning of the test.
 		function fixData()
 		{
 			var i;
 			
-			//replace original arrays with the identical array without the first 10 values
+			//replace original arrays with the identical array minus the first 10 values
 			frameTime = frameTime.slice(badData, endFrame+1);
 			frameNumSquares = frameNumSquares.slice(badData, endFrame+1);
 			frameNum = frameNum - badData;
@@ -398,12 +396,14 @@
 		}
 		
 		
-		//smooth the data on the graph to make it easier to see the trend
+		//Smooth the data on the graph to make it easier to see the overall graph trend.
 		function smoothData()
 		{
 			var i;
 			for(i = 3; i < endFrame; i++)
 			{
+				//if the current render time value is a lot bigger than the previous
+				//then just set it to the average time of the previous 3 frames
 				if(frameTime[i] >= (2* frameTime[i-1]) )
 				{
 					frameTime[i] = ( (frameTime[i] + frameTime[i-1] + frameTime[i-2]) / 3);
@@ -416,7 +416,6 @@
 		function removeSceneObjects()
 		{
 			var obj, i;
-			//console.log("scene.children.length: ", scene.children.length);
 			for ( i = scene.children.length - 1; i >= 0 ; i -- ) 
 			{
 				obj = scene.children[i];
@@ -425,11 +424,10 @@
 					scene.remove(obj);	
 				}
 			}
-			//console.log("scene.children.length: ", scene.children.length);
 		}
 		
 		
-		//debug function to print out the recorded data
+		//Debug function to print out the recorded data
 		function printData() 
 		{
 			var i;
@@ -485,6 +483,7 @@
 				// })
 
 		
+			//tooltip message
 			var tip = d3.tip().html(function(d, i) { return "Frame Number: " +i +"<br>Render Time: " +d 
 														+"<br> Objects: " +frameNumSquares[i]  }).attr("class", "d3-tip");
 				
@@ -528,11 +527,11 @@
 				.attr("class", "tooltip")
 				.style("opacity", 1e-6);
 
-				
+			//setup the tooltip shape, and mouse events
 			graph.selectAll("circle")
 				.data(frameTime)
 			.enter().append("circle")
-				.attr("r", 5)
+				.attr("r", 15)
 				.style("fill","none")
 				.style("stroke","none")
 				.style("pointer-events","all")
@@ -548,15 +547,12 @@
 			// add lines (do this AFTER the axes above so that the line is above the tick-lines)
     		graph.append("svg:path")
 			.attr("d", line1(frameTime))
-				//.attr('y', function(d) { return y(d) })
-				//.attr('x', function(d, i) { return x(i) })
 			.attr("class", "data1");
-				//graph.append("svg:path").attr("d", line2(data)).attr("class", "data2");
 					
-
+			//tooltips for the data on the graph
 			graph.selectAll("circle")
 				.attr("cx", function(d, i) { return x(i); })
-				.attr("cy", function(d, i) { return y(d, i); });		//console.log("i: " +i +"\nd: " +d); 
+				.attr("cy", function(d, i) { return y(d, i); });
 		
 		}
 		
