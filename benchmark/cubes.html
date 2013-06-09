@@ -11,7 +11,6 @@
 			
 			body {
 				font-family: Monospace;
-				<!--background: #000; -->
 				background: #f0f0f0; 
 				background-color: #f0f0f0; 
 				margin: 0px;
@@ -21,17 +20,16 @@
 	</head>
 	<body>
 
+		<!-- included libraries -->
 		<script src="../../build/three.min.js"></script>
 		<script src="../js/Detector.js"></script>
 		<script src="stats.js-r9/src/Stats.js"></script>
-		
-		<!-- <script src="js/libs/stats-new.min.js"></script>			//custom
-		//<script src="js/libs/stats.min - Copy.js"></script>		//original -->
 
-		<!--<input type="text" id="TEXTBOX_ID"> -->
+		<!-- text objects -->
 		<text id="FPSTEXT_ID">Target FPS:</text>
 		<text id="NUMBOXES_ID">Number of objects:</text>
 		
+		<!-- slider objects -->
 		<label for="slider">Target:</label>
 		<input type="range" name="slider" id="FPSSLIDE_ID" min="0" max="60" value="50" 
 				style="position: absolute; top:75px; left:20px" onchange="fpsUpdate(value);">
@@ -80,7 +78,6 @@
 			//assign random colors
 			for(var i = 0; i < numObjects; i++)
 			{
-				//										This number represents: 0xffffff
 				colors[i] = '#'+Math.floor(Math.random()*16777215).toString(16);
 			}
 			var color1 = '#'+Math.floor(Math.random()*16777215).toString(16);
@@ -191,7 +188,7 @@
 				}
 				
 				//debug
-				console.log("# Objects: ", removeNum);
+				//console.log("# Objects: ", removeNum);
 
 				if(addFlag == -1)		//remove objects
 				{
