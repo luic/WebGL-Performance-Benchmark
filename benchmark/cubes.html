@@ -182,6 +182,11 @@
 				else if( stats.getFps() > targetFPS )	// fps too high
 				{
 					addFlag = 1;
+					
+					if (removeNum >= numObjects)
+					{
+						addFlag = 0; //We're maxed out.
+					}
 				}
 				else	//dont need to do anything
 				{
@@ -233,7 +238,15 @@
 		function updateTextBox()
 		{
 			var NumBoxes = document.getElementById('NUMBOXES_ID');
-			NumBoxes.innerHTML = "Number of boxes: " +removeNum;
+			
+			if (removeNum >= numObjects)
+			{
+				NumBoxes.innerHTML = "Number of boxes: " +numObjects + " <strong>MAXIMUM REACHED</strong><br>Please increase the benchmark's maximum object count (numObjects).";
+			}
+			else
+			{
+				NumBoxes.innerHTML = "Number of boxes: " +removeNum;
+			}
 		}
 		
 		function fpsUpdate(value)
