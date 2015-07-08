@@ -42,6 +42,7 @@
 		var varyFPS = targetFPS / 10;		//allowed range of FPS
 		var lowestFPS = targetFPS - varyFPS;	//lowest FPS before taking out objects
 		var startVal = 50;			//starting object number
+		var increasePerStep = 10; //number of boxes to increase per step.
 		var removeNum = startVal;		//mesh array position, for removing objects
 		var container, stats;
 		var camera, scene, renderer;
@@ -196,7 +197,10 @@
 				}
 				else if(addFlag == 1)	//add objects
 				{
-					scene.add( meshes[removeNum++] );
+					for (var i = 0; i < increasePerStep; i++)
+					{
+						scene.add( meshes[removeNum++] );
+					}
 				}
 				
 				waitFrames = waitTime;
