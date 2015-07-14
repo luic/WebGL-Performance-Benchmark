@@ -94,7 +94,7 @@
 			geometry = new THREE.CubeGeometry( 200, 200, 200 );
 			geometry2 = new THREE.CubeGeometry( 200, 400, 200 );
 
-			for(var i = 0; i < meshes.length; i++)
+			for(var i = 0; i < numObjects; i++)
 			{
 			
 				var compute = (Math.floor(Math.random()*4));
@@ -159,7 +159,7 @@
 			stats.update();
 			
 			//rotate all the mesh objects
-			for(var i = 0; i < meshes.length; i++)
+			for(var i = 0; i < removeNum; i++)
 			{
 				meshes[i].rotation.x += 0.01;
 				meshes[i].rotation.y += 0.03;
