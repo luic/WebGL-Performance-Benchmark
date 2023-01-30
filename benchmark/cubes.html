@@ -37,11 +37,12 @@
 		
 		<script>
 
-		var numObjects = 2000;			//max objects
+		var numObjects = 10000;			//max objects
 		var targetFPS = 50;			//highest fps before adding objects
 		var varyFPS = targetFPS / 10;		//allowed range of FPS
 		var lowestFPS = targetFPS - varyFPS;	//lowest FPS before taking out objects
 		var startVal = 50;			//starting object number
+		var increasePerStep = 10; //number of boxes to increase per step.
 		var removeNum = startVal;		//mesh array position, for removing objects
 		var container, stats;
 		var camera, scene, renderer;
@@ -181,6 +182,11 @@
 				else if( stats.getFps() > targetFPS )	// fps too high
 				{
 					addFlag = 1;
+					
+					if (removeNum >= numObjects)
+					{
+						addFlag = 0; //We're maxed out.
+					}
 				}
 				else	//dont need to do anything
 				{
@@ -196,7 +202,10 @@
 				}
 				else if(addFlag == 1)	//add objects
 				{
-					scene.add( meshes[removeNum++] );
+					for (var i = 0; i < increasePerStep; i++)
+					{
+						scene.add( meshes[removeNum++] );
+					}
 				}
 				
 				waitFrames = waitTime;
@@ -229,7 +238,15 @@
 		function updateTextBox()
 		{
 			var NumBoxes = document.getElementById('NUMBOXES_ID');
-			NumBoxes.innerHTML = "Number of boxes: " +removeNum;
+			
+			if (removeNum >= numObjects)
+			{
+				NumBoxes.innerHTML = "Number of boxes: " +numObjects + " <strong>MAXIMUM REACHED</strong><br>Please increase the benchmark's maximum object count (numObjects).";
+			}
+			else
+			{
+				NumBoxes.innerHTML = "Number of boxes: " +removeNum;
+			}
 		}
 		
 		function fpsUpdate(value)
